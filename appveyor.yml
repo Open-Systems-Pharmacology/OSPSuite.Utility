@@ -15,11 +15,8 @@ cache:
   packages -> **\packages.config  # preserve "packages" directory in the root of build folder but will reset it if packages.config is modified
 
 before_build:
- - nuget sources add -name ci -source https://ci.appveyor.com/nuget/open-systems-pharmacology-ci 
+ - nuget sources add -name bddhelper -source https://ci.appveyor.com/nuget/ospsuite-bddhelper 
  - nuget restore
-
-nuget:
-  account_feed: true
 
 build:
   publish_nuget: true
