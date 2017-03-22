@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSPSuite.Utility", "src\OSPSuite.Utility\OSPSuite.Utility.csproj", "{16EA8E25-7A7D-4405-AF43-BBC6FEBEE49E}"
 EndProject
@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CDEF3D9C-45EC-48F8-A557-F27CC6B16E70}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
+		rakefile.rb = rakefile.rb
 		README.md = README.md
 		SolutionInfo.cs = SolutionInfo.cs
 	EndProjectSection
