@@ -14,7 +14,7 @@ This component provides some cross-cutting concerns implementation used in the O
 ## Code Status
 [![NuGet version](https://img.shields.io/nuget/v/OSPSuite.Utility.svg?style=flat)](https://www.nuget.org/packages/OSPSuite.Utility)
 [![Build status](https://ci.appveyor.com/api/projects/status/nlt4g64odn57xuie/branch/master?svg=true&passingText=master%20-%20passing)](https://ci.appveyor.com/project/open-systems-pharmacology-ci/ospsuite-utility/branch/master)
-[![Coverage Status](https://coveralls.io/repos/github/rwmcintosh/OSPSuite.Utility/badge.svg?branch=master)](https://coveralls.io/github/rwmcintosh/OSPSuite.Utility?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Open-Systems-Pharmacology/OSPSuite.Utility/badge.svg?branch=master)](https://coveralls.io/github/Open-Systems-Pharmacology/OSPSuite.Utility?branch=master)
 
 ## Code of conduct
 Everyone interacting in the Open Systems Pharmacology community (codebases, issue trackers, chat rooms, mailing lists etc...) is expected to follow the Open Systems Pharmacology [code of conduct](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODE_OF_CONDUCT.md).
