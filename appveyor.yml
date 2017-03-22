@@ -2,6 +2,8 @@ configuration: Debug
 
 environment:
   app_version: '2.0.0'
+  COVERALLS_REPO_TOKEN:
+    secure: 1l5E4XyUlDgQ1WEuuitSh+p1YxjUuUjv0kK0iaYLtsSKELQwLZ/e6txiLoCaDj0t
 
 version: '%app_version%.{build}'
 
@@ -21,10 +23,10 @@ before_build:
 build:
   publish_nuget: true
   verbosity: minimal
+  project: OSPSuite.Utility.sln
 
-test:
-  assemblies:
-    - OSPSuite.Utility.Tests.dll
+test_script:
+  - rake cover["+[OSPSuite.Utility]*"]
 
 skip_commits:
   files:
