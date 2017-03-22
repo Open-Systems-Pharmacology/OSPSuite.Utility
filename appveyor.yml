@@ -3,7 +3,7 @@ configuration: Debug
 environment:
   app_version: '2.0.0'
   COVERALLS_REPO_TOKEN:
-    secure: 1l5E4XyUlDgQ1WEuuitSh+p1YxjUuUjv0kK0iaYLtsSKELQwLZ/e6txiLoCaDj0t
+    secure: tskiOsDDewOo+zXw6AWn8F27UkQU0eP5Jrxop4gpXJRoklXeKgVca8awJ1lUa+Oe
 
 version: '%app_version%.{build}'
 
