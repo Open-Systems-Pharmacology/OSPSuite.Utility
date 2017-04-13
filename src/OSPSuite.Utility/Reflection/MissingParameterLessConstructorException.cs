@@ -1,5 +1,4 @@
 using System;
-using OSPSuite.Utility.Extensions;
 
 namespace OSPSuite.Utility.Reflection
 {
@@ -7,12 +6,12 @@ namespace OSPSuite.Utility.Reflection
    {
       private const string _errorMessage = "'{0}' is missing a parameterless constructor.";
 
-      public MissingParameterLessConstructorException(Type type) : base(_errorMessage.FormatWith(type.AssemblyQualifiedName))
+      public MissingParameterLessConstructorException(Type type) : base(string.Format(_errorMessage, type.AssemblyQualifiedName))
       {
       }
 
       public MissingParameterLessConstructorException(Type type, Exception e)
-         : base(_errorMessage.FormatWith(type), e)
+         : base(string.Format(_errorMessage, type), e)
       {
       }
    }
