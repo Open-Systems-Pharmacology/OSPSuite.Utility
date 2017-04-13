@@ -30,6 +30,19 @@ skip_commits:
   files:
     - '*.md'
 
+pull_requests: 
+  do_not_increment_build_number: true     
+
+nuget: 
+  disable_publish_on_pr: true  
+
+skip_branch_with_pr: true
+
+branches:
+  only:
+  - master
+  - develop
+
 notifications:
   - provider: Slack
     incoming_webhook:      

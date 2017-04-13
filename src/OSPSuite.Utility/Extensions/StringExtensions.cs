@@ -4,6 +4,7 @@ namespace OSPSuite.Utility.Extensions
 {
    public static class StringExtensions
    {
+      [Obsolete("Please use string interpolation instead")]
       public static string FormatWith(this string formattedString, params object[] arguments)
       {
          return string.Format(formattedString, arguments);

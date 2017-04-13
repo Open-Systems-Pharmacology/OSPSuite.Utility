@@ -27,7 +27,7 @@ namespace OSPSuite.Utility.Extensions
 
       public static void LogDebug<T>(this T objectToLog, string formattedMessage, params object[] arguments)
       {
-         objectToLog.Log().Debug(formattedMessage.FormatWith(arguments));
+         objectToLog.Log().Debug(string.Format(formattedMessage, arguments));
       }
    }
 }
