@@ -5,15 +5,22 @@ using OSPSuite.Utility.Reflection;
 
 namespace OSPSuite.Utility.Tests
 {
-   public abstract class concern_for_notifier : ContextSpecification<INotifier>
+   public abstract class concern_for_Notifier : ContextSpecification<MyObject>
    {
       protected bool _propertyNotified;
       protected bool _changed;
       protected string _propertyName;
+      protected string _defaultDescription = "Default Description";
+      protected string _defaultName = "Default Name";
 
       protected override void Context()
       {
-         sut = new MyObject();
+         sut = new MyObject
+         {
+            Description = _defaultDescription,
+            Name = _defaultName
+         };
+
          sut.PropertyChanged += (o, e) =>
          {
             _propertyNotified = true;
@@ -23,8 +30,13 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
-   public class When_a_property_is_set_for_which_the_on_property_changed_was_defined_dynamically : concern_for_notifier
+   public class When_a_property_is_set_for_which_the_on_property_changed_was_defined_dynamically : concern_for_Notifier
    {
+      protected override void Because()
+      {
+         sut.Name = "toto";
+      }
+
       [Observation]
       public void should_notify_the_listener()
       {
@@ -42,15 +54,15 @@ namespace OSPSuite.Utility.Tests
       {
          _propertyName.ShouldBeEqualTo("Name");
       }
-
-      protected override void Because()
-      {
-         sut.DowncastTo<MyObject>().Name = "toto";
-      }
    }
 
-   public class When_a_property_is_set_for_which_the_on_property_changed_was_defined_statically : concern_for_notifier
+   public class When_a_property_is_set_for_which_the_on_property_changed_was_defined_statically : concern_for_Notifier
    {
+      protected override void Because()
+      {
+         sut.Description = "toto";
+      }
+
       [Observation]
       public void should_notify_the_listener()
       {
@@ -62,10 +74,18 @@ namespace OSPSuite.Utility.Tests
       {
          _propertyName.ShouldBeEqualTo("Description");
       }
+   }
 
+   public class When_setting_the_same_property_twice : concern_for_Notifier
+   {
       protected override void Because()
       {
-         sut.DowncastTo<MyObject>().Description = "toto";
+         sut.Description = _defaultDescription;
+      }
+      [Observation]
+      public void should_not_raise_the_property_notified()
+      {
+         _propertyNotified.ShouldBeFalse();
       }
    }
 
@@ -75,24 +95,16 @@ namespace OSPSuite.Utility.Tests
 
       public string Name
       {
-         get { return _name; }
-         set
-         {
-            _name = value;
-            OnPropertyChanged(() => Name);
-         }
+         get => _name;
+         set => SetProperty(ref _name, value, () => Name);
       }
 
       private string _description;
 
       public string Description
       {
-         get { return _description; }
-         set
-         {
-            _description = value;
-            OnPropertyChanged();
-         }
+         get => _description;
+         set => SetProperty(ref _description, value);
       }
    }
 }

@@ -164,6 +164,18 @@ namespace OSPSuite.Utility
       };
 
       /// <summary>
+      /// Returns the full version of the product defined at the given file full path or null if it did not contain a version information.
+      /// It also returns null if the file does not exists
+      /// </summary>
+      public static Func<string, string> GetVersion = binaryExecutablePath =>
+      {
+         if (FileExists(binaryExecutablePath))
+            return FileVersionInfo.GetVersionInfo(binaryExecutablePath).ProductVersion;
+
+         return null;
+      };
+
+      /// <summary>
       ///    Returns true if the two files are equal otherwise false (equals when the hash are the same)
       /// </summary>
       /// <param name="fileFullPath1">Path of the first file</param>

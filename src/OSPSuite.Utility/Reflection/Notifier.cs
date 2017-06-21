@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -27,16 +28,40 @@ namespace OSPSuite.Utility.Reflection
 
       protected void OnPropertyChanged<TPropertyType>(Expression<Func<TPropertyType>> exp)
       {
-         var memberExpression = ReflectionHelper.GetMemberExpression(exp);
-         var propertyName = memberExpression.Member.Name;
+         RaisePropertyChanged(nameFor(exp));
+      }
 
-         RaisePropertyChanged(propertyName);
+      private static string nameFor<TPropertyType>(Expression<Func<TPropertyType>> exp)
+      {
+         var memberExpression = ReflectionHelper.GetMemberExpression(exp);
+         return memberExpression.Member.Name;
       }
 
       protected virtual void RaisePropertyChanged(string propertyName)
       {
          PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
          OnChanged();
+      }
+
+      protected bool SetProperty<T>(ref T backingField, T value, Expression<Func<T>> exp)
+      {
+         return setProperty(ref backingField, value, nameFor(exp));
+      }
+
+      protected bool SetProperty<T>(ref T backingField, T value, [CallerMemberName] string propertyName = null)
+      {
+         return setProperty(ref backingField, value, propertyName);
+      }
+
+      private bool setProperty<T>(ref T backingField, T value, string propertyName)
+      {
+         if (EqualityComparer<T>.Default.Equals(backingField, value))
+            return false;
+
+         backingField = value;
+         RaisePropertyChanged(propertyName);
+
+         return true;
       }
    }
 }
