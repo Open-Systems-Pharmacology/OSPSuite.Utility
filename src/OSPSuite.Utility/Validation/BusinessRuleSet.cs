@@ -68,29 +68,17 @@ namespace OSPSuite.Utility.Validation
          return new BusinessRuleSet(query);
       }
 
-      public string Message
-      {
-         get { return string.Join("\n", Messages.ToArray()); }
-      }
+      public string Message => string.Join("\n", Messages.ToArray());
 
-      public IList<string> Messages
-      {
-         get { return new List<string>(from rule in _rules select rule.Description); }
-      }
+      public IList<string> Messages => new List<string>(from rule in _rules select rule.Description);
 
-      public int Count
-      {
-         get { return _rules.Count; }
-      }
+      public int Count => _rules.Count;
 
       public bool Contains(IBusinessRule rule)
       {
          return _rules.Contains(rule);
       }
 
-      public bool IsEmpty
-      {
-         get { return Count == 0; }
-      }
+      public bool IsEmpty => Count == 0;
    }
 }

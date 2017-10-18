@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>OSPSuite.Utility.Tests</RootNamespace>
     <AssemblyName>OSPSuite.Utility.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -90,6 +90,7 @@
     <Compile Include="ByteArrayConverterSpecs.cs" />
     <Compile Include="CacheSpecs.cs" />
     <Compile Include="ClassDefinitionForSpecs.cs" />
+    <Compile Include="CompositionBusinessRuleSpecs.cs" />
     <Compile Include="ConversionExtensionsSpecs.cs" />
     <Compile Include="DateTimeExtensionsSpecs.cs" />
     <Compile Include="DelegateFactorySpecs.cs" />
@@ -105,7 +106,6 @@
     <Compile Include="IoCSpecs.cs" />
     <Compile Include="ListExtensionsSpecs.cs" />
     <Compile Include="LockFilePathBuilderSpecs.cs" />
-    <Compile Include="LogSpecs.cs" />
     <Compile Include="NotifierSpecs.cs" />
     <Compile Include="NotifyCacheSpecs.cs" />
     <Compile Include="NotifyListSpecs.cs" />
@@ -117,8 +117,6 @@
     <Compile Include="PropertyInspectorSpecs.cs" />
     <Compile Include="RegisterSpecs.cs" />
     <Compile Include="StringCompressionSpecs.cs" />
-    <Compile Include="TextWriterLogFactorySpecs.cs" />
-    <Compile Include="TextWriterLoggerSpecs.cs" />
     <Compile Include="TypeExtensionsSpecs.cs" />
     <Compile Include="TypeSimplifierSpecs.cs" />
     <Compile Include="UnableToVisitObjectExceptionSpecs.cs" />

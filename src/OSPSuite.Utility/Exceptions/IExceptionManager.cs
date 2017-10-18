@@ -25,7 +25,7 @@ namespace OSPSuite.Utility.Exceptions
    {
       public abstract void LogException(Exception ex);
 
-      public void Execute(Action action)
+      public virtual void Execute(Action action)
       {
          try
          {

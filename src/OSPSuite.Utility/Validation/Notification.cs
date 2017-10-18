@@ -8,10 +8,7 @@ namespace OSPSuite.Utility.Validation
 
    internal class EmptyNotification : INotification
    {
-      public string ErrorNotification
-      {
-         get { return string.Empty; }
-      }
+      public string ErrorNotification => string.Empty;
 
       public bool HasError()
       {
@@ -21,7 +18,7 @@ namespace OSPSuite.Utility.Validation
 
    public class Notification : INotification
    {
-      public string ErrorNotification { get; private set; }
+      public string ErrorNotification { get; }
 
       public Notification() : this(string.Empty)
       {

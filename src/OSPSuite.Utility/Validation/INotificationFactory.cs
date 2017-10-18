@@ -15,8 +15,8 @@ namespace OSPSuite.Utility.Validation
 
       public INotification CreateNotificationFrom(IBusinessRuleSet ruleSet)
       {
-         if (ruleSet == null) return NoNotification();
-         if (ruleSet.Count == 0) return NoNotification();
+         if (ruleSet == null || ruleSet.IsEmpty)
+            return NoNotification();
 
          return new Notification(ruleSet.Message);
       }

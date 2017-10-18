@@ -20,6 +20,12 @@ namespace OSPSuite.Utility
       /// </summary>
       public static Action<string, bool> DeleteDirectory = deleteDirectory;
 
+      /// <summary>
+      ///    Returns all <see cref="FileInfo" /> for files defined in the folder (first parameter) matching the file filter
+      ///    (second parameter)
+      /// </summary>
+      public static Func<string, string, FileInfo[]> AllFilesFromDirectory = allFilesFromDirectory;
+
       private static bool directoryExists(string path)
       {
          return Directory.Exists(path);
@@ -34,6 +40,12 @@ namespace OSPSuite.Utility
       private static void deleteDirectory(string path, bool recursive)
       {
          Directory.Delete(path, recursive);
+      }
+
+      private static FileInfo[] allFilesFromDirectory(string folder, string filter)
+      {
+         var directory = new DirectoryInfo(folder);
+         return directory.GetFiles(filter);
       }
    }
 }

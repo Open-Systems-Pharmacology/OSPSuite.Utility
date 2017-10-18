@@ -1,12 +1,12 @@
 namespace OSPSuite.Utility
 {
-   public interface IMapper<in Input, out Output>
+   public interface IMapper<in TInput, out TOutput>
    {
       /// <summary>
-      ///    Map the given <paramref name="input" /> to an object of type <typeparamref name="Output" />
+      ///    Map the given <paramref name="input" /> to an object of type <typeparamref name="TOutput" />
       /// </summary>
       /// <param name="input"></param>
       /// <returns></returns>
-      Output MapFrom(Input input);
+      TOutput MapFrom(TInput input);
    }
 }

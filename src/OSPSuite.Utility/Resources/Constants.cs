@@ -2,8 +2,6 @@
 {
    public static class Constants
    {
-      public const string XLSXExtension = ".xlsx";
-
       public static class Errors
       {
          public static string CannotAccessFile(string fileFullPath)

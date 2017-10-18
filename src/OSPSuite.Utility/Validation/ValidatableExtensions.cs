@@ -35,7 +35,7 @@ namespace OSPSuite.Utility.Validation
 
       public static bool IsValid(this IValidatable itemToValidate)
       {
-         return itemToValidate.Validate().Count == 0;
+         return itemToValidate.Validate().IsEmpty;
       }
    }
 }

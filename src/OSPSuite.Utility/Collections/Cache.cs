@@ -57,6 +57,11 @@ namespace OSPSuite.Utility.Collections
       ///    Iterates over the cache and returns the Key Value defined for each cache entry.
       /// </summary>
       IEnumerable<KeyValuePair<TKey, TValue>> KeyValues { get; }
+
+      /// <summary>
+      /// Returns the cache as new dictionary instance
+      /// </summary>
+      Dictionary<TKey, TValue> ToDictionary();
    }
 
    public class Cache<TKey, TValue> : ICache<TKey, TValue>
@@ -66,16 +71,16 @@ namespace OSPSuite.Utility.Collections
       public Func<TValue, TKey> GetKey { get; set; }
       public Func<TKey, TValue> OnMissingKey { get; set; }
 
-      private readonly IDictionary<TKey, TValue> _values = new Dictionary<TKey, TValue>();
+      private readonly Dictionary<TKey, TValue> _values = new Dictionary<TKey, TValue>();
 
       public Cache()
       {
-         OnMissingKey = key => { throw new KeyNotFoundException($"Key '{key}' could not be found"); };
+         OnMissingKey = key => throw new KeyNotFoundException($"Key '{key}' could not be found");
       }
 
       public Cache(Func<TValue, TKey> getKey)
       {
-         OnMissingKey = key => { throw new KeyNotFoundException($"Key '{key}' could not be found"); };
+         OnMissingKey = key => throw new KeyNotFoundException($"Key '{key}' could not be found");
          GetKey = getKey;
       }
 
@@ -112,9 +117,11 @@ namespace OSPSuite.Utility.Collections
          range.Each(Add);
       }
 
-      public virtual IEnumerable<KeyValuePair<TKey, TValue>> KeyValues
+      public virtual IEnumerable<KeyValuePair<TKey, TValue>> KeyValues => _values;
+
+      public Dictionary<TKey, TValue> ToDictionary()
       {
-         get { return _values; }
+         return new Dictionary<TKey, TValue>(_values);
       }
 
       public virtual void Add(TKey key, TValue value)
@@ -203,14 +210,8 @@ namespace OSPSuite.Utility.Collections
          _values.Clear();
       }
 
-      public virtual IEnumerable<TKey> Keys
-      {
-         get { return _values.Keys; }
-      }
+      public virtual IEnumerable<TKey> Keys => _values.Keys;
 
-      public int Count
-      {
-         get { return _values.Count; }
-      }
+      public int Count => _values.Count;
    }
 }
