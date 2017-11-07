@@ -23,32 +23,31 @@ namespace OSPSuite.Utility
       private readonly IContainer _container;
       private readonly Type _genericBuilderType;
       private readonly ITypeSimplifier _typeSimplifier;
-      private IList<TBuilder> _allTEXBuilder;
-      private readonly ICache<Type, TBuilder> _texBuilderCache;
+      private List<TBuilder> _allBuilders;
+      private readonly ICache<Type, TBuilder> _allBuilderCache = new Cache<Type, TBuilder>();
       private bool _isInitialized;
 
       protected BuilderRepository(IContainer container, Type genericBuilderType)
       {
          _container = container;
          _genericBuilderType = genericBuilderType;
-         _texBuilderCache = new Cache<Type, TBuilder>();
          _typeSimplifier = new TypeSimplifier();
       }
 
       public TBuilder BuilderFor(Type type)
       {
          Start();
-         if (_texBuilderCache.Contains(type))
-            return _texBuilderCache[type];
+         if (_allBuilderCache.Contains(type))
+            return _allBuilderCache[type];
 
-         var allBuilderForType = _allTEXBuilder.Where(b => b.IsSatisfiedBy(type)).ToList();
+         var allBuilderForType = _allBuilders.Where(b => b.IsSatisfiedBy(type)).ToList();
 
          //No Builder found. Return null
          if (allBuilderForType.Count == 0)
             return null;
 
          if (allBuilderForType.Count == 1)
-            _texBuilderCache.Add(type, allBuilderForType[0]);
+            _allBuilderCache.Add(type, allBuilderForType[0]);
          else
          {
             //more than one implementation? try to find the one that matches the best the given type
@@ -61,12 +60,12 @@ namespace OSPSuite.Utility
             //finds the one that matches the most the implementation
             var simplifiedImplementation = _typeSimplifier.Simplify(allGenericTypes).ToList();
             if (simplifiedImplementation.Count == 1)
-               _texBuilderCache.Add(type, allBuilderForType.ElementAt(allGenericTypes.IndexOf(simplifiedImplementation[0])));
+               _allBuilderCache.Add(type, allBuilderForType.ElementAt(allGenericTypes.IndexOf(simplifiedImplementation[0])));
             else
                return null;
          }
 
-         return _texBuilderCache[type];
+         return _allBuilderCache[type];
       }
 
       public TBuilder BuilderFor(object objectToBuild)
@@ -77,7 +76,7 @@ namespace OSPSuite.Utility
       public void Start()
       {
          if (_isInitialized) return;
-         _allTEXBuilder = _container.ResolveAll<TBuilder>().ToList();
+         _allBuilders = _container.ResolveAll<TBuilder>().ToList();
          _isInitialized = true;
       }
    }

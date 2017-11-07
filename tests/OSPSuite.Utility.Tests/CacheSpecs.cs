@@ -39,6 +39,30 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
+   public class When_returning_a_dictionary_from_cache : concern_for_Cache
+   {
+      private AnImplementation _objectToAdd;
+      private Dictionary<string, IAnInterface> _result;
+
+      protected override void Context()
+      {
+         base.Context();
+         _objectToAdd = new AnImplementation { FirstName = "toto" };
+         sut.Add(_objectToAdd);
+      }
+
+      protected override void Because()
+      {
+         _result = sut.ToDictionary();
+      }
+
+      [Observation]
+      public void should_return_a_dictionary_containing_all_the_element_from_the_cache()
+      {
+         _result[_objectToAdd.FirstName].ShouldBeEqualTo(_objectToAdd);
+      }
+   }
+
    public class When_retrieving_the_key_used_to_register_the_object : concern_for_Cache
    {
       private AnImplementation _objectToAdd;

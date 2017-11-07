@@ -336,10 +336,11 @@ namespace OSPSuite.Utility.Tests
             .WithRule((p, value) => value <= 2000)
             .WithError("Value should be smaller than 2000");
 
-         public static IBusinessRuleSet Default
-         {
-            get { return new BusinessRuleSet(Name, GreaterThanZero); }
-         }
+         public static IBusinessRuleSet Default => new BusinessRuleSet(Name, GreaterThanZero);
+
+         public static IBusinessRuleSet All => new BusinessRuleSet(Name, GreaterThanZero, SmallerThanOneThousand, SmallerThanTwoThousand);
+
+
       }
    }
 

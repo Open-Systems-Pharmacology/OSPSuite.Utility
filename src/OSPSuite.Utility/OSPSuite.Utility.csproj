@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>OSPSuite.Utility</RootNamespace>
     <AssemblyName>OSPSuite.Utility</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>
     </SccProjectName>
@@ -108,7 +108,6 @@
     <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\LatchableExtensions.cs" />
-    <Compile Include="Extensions\LoggingExtensions.cs" />
     <Compile Include="Extensions\SpecificationExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
@@ -120,13 +119,12 @@
     <Compile Include="FileLocker\LockFilePathBuilder.cs" />
     <Compile Include="ILatchable.cs" />
     <Compile Include="IMapper.cs" />
-    <Compile Include="Logging\TextWriterLogging\TextWriterLogFactory.cs" />
-    <Compile Include="Logging\TextWriterLogging\TextWriterLogger.cs" />
     <Compile Include="Reflection\ExpressionExtensions.cs" />
     <Compile Include="Reflection\Notifier.cs" />
     <Compile Include="Reflection\WeakRef.cs" />
     <Compile Include="Resources\Constants.cs" />
     <Compile Include="SystemTime.cs" />
+    <Compile Include="Validation\CompositionBusinessRule.cs" />
     <Compile Include="Validation\InvalidRuleTypeException.cs" />
     <Compile Include="Validation\ValidatableBusinessRule.cs" />
     <Compile Include="Visitor\IVisitable.cs" />
@@ -134,9 +132,6 @@
     <Compile Include="Visitor\AmbiguousVisitMethodException.cs" />
     <Compile Include="Visitor\VisitorExtensions.cs" />
     <Compile Include="Visitor\VisitorInvoker.cs" />
-    <Compile Include="Logging\ILogFactory.cs" />
-    <Compile Include="Logging\ILogger.cs" />
-    <Compile Include="Logging\Log.cs" />
     <Compile Include="Reflection\TypeInspector.cs" />
     <Compile Include="Validation\BusinessRule.cs" />
     <Compile Include="Validation\BusinessRuleSet.cs" />
@@ -207,7 +202,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="OSPSuite.Utility.nuspec" />
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
