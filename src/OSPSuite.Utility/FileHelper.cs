@@ -87,6 +87,7 @@ namespace OSPSuite.Utility
             {
                //could open file
             }
+
             return false;
          }
          catch (IOException)
@@ -164,15 +165,17 @@ namespace OSPSuite.Utility
       };
 
       /// <summary>
-      /// Returns the full version of the product defined at the given file full path or null if it did not contain a version information.
-      /// It also returns null if the file does not exists
+      ///    Returns the full version of the product defined at the given file full path or null if it did not contain a version
+      ///    information.
+      ///    It also returns null if the file does not exists
       /// </summary>
       public static Func<string, string> GetVersion = binaryExecutablePath =>
       {
-         if (FileExists(binaryExecutablePath))
-            return FileVersionInfo.GetVersionInfo(binaryExecutablePath).ProductVersion;
+         if (!FileExists(binaryExecutablePath))
+            return null;
 
-         return null;
+         var versionInfo = FileVersionInfo.GetVersionInfo(binaryExecutablePath);
+         return string.IsNullOrEmpty(versionInfo.ProductVersion) ? versionInfo.FileVersion : versionInfo.ProductVersion;
       };
 
       /// <summary>
@@ -191,6 +194,7 @@ namespace OSPSuite.Utility
          {
             hashFile1 = hashAlgorithm.ComputeHash(fs);
          }
+
          using (var fs = new FileStream(fileFullPath2, FileMode.Open))
          {
             hashFile2 = hashAlgorithm.ComputeHash(fs);
@@ -321,6 +325,7 @@ namespace OSPSuite.Utility
             {
                len = maxLength - root.Length - 3;
             }
+
             return root + elements[filenameIndex].Substring(0, len) + "...";
          }
          else if (elements.GetLength(0) == 2)
@@ -375,6 +380,7 @@ namespace OSPSuite.Utility
 
             return root + elements[filenameIndex];
          }
+
          return pathname;
       }
    }
