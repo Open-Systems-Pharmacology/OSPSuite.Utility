@@ -92,6 +92,7 @@
     <Compile Include="ClassDefinitionForSpecs.cs" />
     <Compile Include="CompositionBusinessRuleSpecs.cs" />
     <Compile Include="ConversionExtensionsSpecs.cs" />
+    <Compile Include="DataTableExtensionsSpecs.cs" />
     <Compile Include="DateTimeExtensionsSpecs.cs" />
     <Compile Include="DelegateFactorySpecs.cs" />
     <Compile Include="EnumerableExtensionsSpecs.cs" />
