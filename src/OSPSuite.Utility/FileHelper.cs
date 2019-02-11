@@ -244,8 +244,8 @@ namespace OSPSuite.Utility
 
          try
          {
-            var originalUri = new Uri(appendDirectorySeparatorChar(originalPath));
-            var relativeToUri = new Uri(appendDirectorySeparatorChar(relativeToPath));
+            var originalUri = new Uri(appendDirectorySeparatorChar(originalPath, isRelativeToPath:false));
+            var relativeToUri = new Uri(appendDirectorySeparatorChar(relativeToPath, isRelativeToPath: true));
 
             if (originalUri.Scheme != relativeToUri.Scheme)
                return originalPath;
@@ -267,14 +267,20 @@ namespace OSPSuite.Utility
          }
       }
 
-      private static string appendDirectorySeparatorChar(string path)
+      private static string appendDirectorySeparatorChar(string path, bool isRelativeToPath)
       {
-         // Append a slash only if the path is a directory and does not have a slash.
-         if (!Path.HasExtension(path) && !path.EndsWith(Path.DirectorySeparatorChar.ToString()))
-            return path + Path.DirectorySeparatorChar;
+         var endsWithSeparator = path.EndsWith(Path.DirectorySeparatorChar.ToString());
+         if (endsWithSeparator)
+            return path;
+
+         // Append a slash only if the path is a directory or the path is a file use to base the relativePath to 
+         if (!Path.HasExtension(path) || isRelativeToPath)
+            return appendDirectorySeparator(path);
 
          return path;
       }
+
+      private static string appendDirectorySeparator(string path) => $"{path}{Path.DirectorySeparatorChar}";
 
       /// <summary>
       ///    Try to shorten a path to a given max length (e.g. replace the sub folder with ...)
