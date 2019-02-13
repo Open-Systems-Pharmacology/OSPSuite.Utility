@@ -204,7 +204,7 @@ namespace OSPSuite.Utility
       }
 
       /// <summary>
-      ///    Returns true if the path is read only or do not have access to view the permissions otherwise false
+      ///    Returns <c>false</c> if the path is read only or do not have access to view the permissions otherwise <c>true</c>
       /// </summary>
       public static bool HasWriteAccessToFolder(string folderPath)
       {
@@ -222,11 +222,45 @@ namespace OSPSuite.Utility
       }
 
       /// <summary>
-      ///    Returns true if the path is read only or do not have access to view the permissions otherwise false
+      ///    Returns <c>false</c> if the path is read only or do not have access to view the permissions otherwise <c>true</c>
       /// </summary>
-      public static bool HasWriteAccessToFolder(DirectoryInfo directoryInfo)
+      public static bool HasWriteAccessToFolder(DirectoryInfo directoryInfo) =>
+         HasWriteAccessToFolder(directoryInfo.FullName);
+
+      /// <summary>
+      ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory. If
+      ///    <paramref name="createRootDirectory" /> is <c>true</c> (default), a sub folder named after the source
+      ///    folder will be created. Otherwise the content of the  <paramref name="source" /> directory will be directly copied
+      ///    under  the <paramref name="target" /> directory.
+      /// </summary>
+      public static void CopyDirectory(string source, string target, bool createRootDirectory = true) =>
+         CopyDirectory(new DirectoryInfo(source), new DirectoryInfo(target), createRootDirectory);
+
+      /// <summary>
+      ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory. If
+      ///    <paramref name="createRootDirectory" /> is <c>true</c> (default), a sub folder named after the source
+      ///    folder will be created. Otherwise the content of the  <paramref name="source" /> directory will be directly copied
+      ///    under  the <paramref name="target" /> directory.
+      /// </summary>
+      public static void CopyDirectory(DirectoryInfo source, DirectoryInfo target, bool createRootDirectory = true)
       {
-         return HasWriteAccessToFolder(directoryInfo.FullName);
+         if (!target.Exists)
+            target.Create();
+
+         var rootTarget = target;
+         if (createRootDirectory)
+            rootTarget = target.CreateSubdirectory(source.Name);
+
+         foreach (var dir in source.GetDirectories())
+         {
+            //Do not creaet root directory as it is created in this call
+            CopyDirectory(dir, rootTarget.CreateSubdirectory(dir.Name), createRootDirectory: false);
+         }
+
+         foreach (var file in source.GetFiles())
+         {
+            file.CopyTo(Path.Combine(rootTarget.FullName, file.Name), overwrite: true);
+         }
       }
 
       /// <summary>
@@ -237,14 +271,14 @@ namespace OSPSuite.Utility
       /// <example>
       ///    CreateRelativePath("C:\A\B\C\file1.txt", "C:\A\B\D\file2.txt") returns "..\C\file1.txt"
       /// </example>
-      public static string CreateRelativePath(string originalPath, string relativeToPath)
+      public static string CreateRelativePath(string originalPath, string relativeToPath, bool useUnixPathSeparator = false)
       {
          if (string.IsNullOrEmpty(originalPath) || string.IsNullOrEmpty(relativeToPath))
             return originalPath;
 
          try
          {
-            var originalUri = new Uri(appendDirectorySeparatorChar(originalPath, isRelativeToPath:false));
+            var originalUri = new Uri(appendDirectorySeparatorChar(originalPath, isRelativeToPath: false));
             var relativeToUri = new Uri(appendDirectorySeparatorChar(relativeToPath, isRelativeToPath: true));
 
             if (originalUri.Scheme != relativeToUri.Scheme)
@@ -254,9 +288,10 @@ namespace OSPSuite.Utility
             var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
 
             if (string.Equals(relativeToUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
-            {
                relativePath = relativePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            }
+
+            if (useUnixPathSeparator)
+               relativePath = relativePath.Replace(Path.DirectorySeparatorChar, '/');
 
             return relativePath;
          }
