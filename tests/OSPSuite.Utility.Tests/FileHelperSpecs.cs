@@ -249,6 +249,14 @@ namespace OSPSuite.Utility.Tests
       }
 
       [Observation]
+      public void should_return_the_expected_relative_path_between_a_file_and_another_file_on_the_same_drive_using_unix_separator()
+      {
+         FileHelper.CreateRelativePath(_file1, _file2, true).ShouldBeEqualTo("../../C/file1.txt");
+         FileHelper.CreateRelativePath(_file1, _file3, true).ShouldBeEqualTo("../../C/file1.txt");
+      }
+
+
+      [Observation]
       public void should_return_the_expected_relative_path_between_a_folder_and_a_file()
       {
          FileHelper.CreateRelativePath(_folder5, _file1).ShouldBeEqualTo(@"..\D\");
