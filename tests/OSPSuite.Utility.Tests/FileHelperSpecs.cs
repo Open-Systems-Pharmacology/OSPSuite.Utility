@@ -355,4 +355,50 @@ namespace OSPSuite.Utility.Tests
          DirectoryHelper.DeleteDirectory(_targetDirectory, true);
       }
    }
+
+   public class When_copying_the_content_of_one_directory_to_another_without_allowing_file_overwrite : concern_for_FileHelper
+   {
+      private string _sourceDirectory;
+      private string _targetDirectory;
+      private readonly string _file1Name = "file1.txt";
+      private readonly string _file2Name = "file2.txt";
+      private string _srcFile1;
+      private string _srcFile2;
+      private string _targetFile1;
+
+      public override void GlobalContext()
+      {
+         base.GlobalContext();
+         _sourceDirectory = DirectoryHelper.CreateDirectory("C:/temp/source");
+         _targetDirectory = DirectoryHelper.CreateDirectory("C:/temp/target");
+
+         _srcFile1 = Path.Combine(_sourceDirectory, _file1Name);
+         _srcFile2 = Path.Combine(_sourceDirectory, _file2Name);
+         _targetFile1 = Path.Combine(_sourceDirectory, _file1Name);
+         File.WriteAllText(Path.Combine(_sourceDirectory, _srcFile1), "FILE1_SOURCE");
+         File.WriteAllText(Path.Combine(_sourceDirectory, _srcFile2), "FILE2_SOURCE");
+         File.WriteAllText(Path.Combine(_targetDirectory, _targetFile1), "FILE1_TARGET");
+
+         FileHelper.CopyDirectory(_sourceDirectory, _targetDirectory, overwrite: false, createRootDirectory: false);
+      }
+
+      [Observation]
+      public void should_have_copied_the_non_existing_file_from_source_in_target()
+      {
+         FileHelper.FileExists(Path.Combine(_targetDirectory, _file2Name)).ShouldBeTrue();
+      }
+
+      [Observation]
+      public void should_have_kept_the_existing_file_with_same_name_in_target()
+      {
+         File.ReadAllText(Path.Combine(_targetDirectory, _targetFile1)).ShouldBeEqualTo("FILE1_TARGET");
+      }
+
+      public override void GlobalCleanup()
+      {
+         base.GlobalCleanup();
+         DirectoryHelper.DeleteDirectory(_sourceDirectory, true);
+         DirectoryHelper.DeleteDirectory(_targetDirectory, true);
+      }
+   }
 }
