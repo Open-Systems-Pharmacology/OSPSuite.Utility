@@ -228,21 +228,31 @@ namespace OSPSuite.Utility
          HasWriteAccessToFolder(directoryInfo.FullName);
 
       /// <summary>
-      ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory. If
-      ///    <paramref name="createRootDirectory" /> is <c>true</c> (default), a sub folder named after the source
-      ///    folder will be created. Otherwise the content of the  <paramref name="source" /> directory will be directly copied
-      ///    under  the <paramref name="target" /> directory.
+      ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory.
       /// </summary>
-      public static void CopyDirectory(string source, string target, bool createRootDirectory = true) =>
-         CopyDirectory(new DirectoryInfo(source), new DirectoryInfo(target), createRootDirectory);
+      /// <param name="source">Source directory to copy from</param>
+      /// <param name="target">Target directory to copy to</param>
+      /// <param name="createRootDirectory">
+      ///    Should a subfolder named after the source folder be created under target? If <c>true</c> (default), a sub folder
+      ///    named after the source folder will be created. Otherwise the content of the <paramref name="source" /> directory
+      ///    will be directly copied under  the <paramref name="target" /> directory.
+      /// </param>
+      /// <param name="overwrite">Should a file existing in the target folder be overwritten? Default is <c>true</c></param>
+      public static void CopyDirectory(string source, string target, bool createRootDirectory = true, bool overwrite = true) =>
+         CopyDirectory(new DirectoryInfo(source), new DirectoryInfo(target), createRootDirectory, overwrite);
 
       /// <summary>
-      ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory. If
-      ///    <paramref name="createRootDirectory" /> is <c>true</c> (default), a sub folder named after the source
-      ///    folder will be created. Otherwise the content of the  <paramref name="source" /> directory will be directly copied
-      ///    under  the <paramref name="target" /> directory.
+      ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory.
       /// </summary>
-      public static void CopyDirectory(DirectoryInfo source, DirectoryInfo target, bool createRootDirectory = true)
+      /// <param name="source">Source directory to copy from</param>
+      /// <param name="target">Target directory to copy to</param>
+      /// <param name="createRootDirectory">
+      ///    Should a subfolder named after the source folder be created under target? If <c>true</c> (default), a sub folder
+      ///    named after the source folder will be created. Otherwise the content of the <paramref name="source" /> directory
+      ///    will be directly copied under  the <paramref name="target" /> directory.
+      /// </param>
+      /// <param name="overwrite">Should a file existing in the target folder be overwritten? Default is <c>true</c></param>
+      public static void CopyDirectory(DirectoryInfo source, DirectoryInfo target, bool createRootDirectory = true, bool overwrite = true)
       {
          if (!target.Exists)
             target.Create();
@@ -253,13 +263,13 @@ namespace OSPSuite.Utility
 
          foreach (var dir in source.GetDirectories())
          {
-            //Do not creaet root directory as it is created in this call
-            CopyDirectory(dir, rootTarget.CreateSubdirectory(dir.Name), createRootDirectory: false);
+            //Force directory creation here as we need to create the structure
+            CopyDirectory(dir, rootTarget, createRootDirectory: true, overwrite:overwrite);
          }
 
          foreach (var file in source.GetFiles())
          {
-            file.CopyTo(Path.Combine(rootTarget.FullName, file.Name), overwrite: true);
+            file.CopyTo(Path.Combine(rootTarget.FullName, file.Name), overwrite);
          }
       }
 
