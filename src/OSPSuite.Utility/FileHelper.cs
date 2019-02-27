@@ -329,25 +329,25 @@ namespace OSPSuite.Utility
 
       private static string sanitizePath(string path, bool isRelativeToPath)
       {
-         var endsWithSeparator = path.EndsWith(Path.DirectorySeparatorChar.ToString());
+         var sanitizedPath = path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+         var endsWithSeparator = sanitizedPath.EndsWith(Path.DirectorySeparatorChar.ToString());
 
          //The relative path should always end with a separator
          if (isRelativeToPath)
-         {
-            if (endsWithSeparator)
-               return path;
-
-            return appendDirectorySeparator(path);
-         }
+            return appendDirectorySeparator(sanitizedPath);
 
          //Absolute argument should not end with separator
          if (endsWithSeparator)
-            return path.Remove(path.Length - 1);
+            return sanitizedPath.Remove(sanitizedPath.Length - 1);
 
-         return path;
+         return sanitizedPath;
       }
 
-      private static string appendDirectorySeparator(string path) => $"{path}{Path.DirectorySeparatorChar}";
+      private static string appendDirectorySeparator(string path)
+      {
+         var endsWithSeparator = path.EndsWith(Path.DirectorySeparatorChar.ToString());
+         return endsWithSeparator ? path : $"{path}{Path.DirectorySeparatorChar}";
+      }
 
       /// <summary>
       ///    Try to shorten a path to a given max length (e.g. replace the sub folder with ...)
