@@ -264,7 +264,7 @@ namespace OSPSuite.Utility
          foreach (var dir in source.GetDirectories())
          {
             //Force directory creation here as we need to create the structure
-            CopyDirectory(dir, rootTarget, createRootDirectory: true, overwrite:overwrite);
+            CopyDirectory(dir, rootTarget, createRootDirectory: true, overwrite: overwrite);
          }
 
          foreach (var file in source.GetFiles())
@@ -274,22 +274,33 @@ namespace OSPSuite.Utility
       }
 
       /// <summary>
-      ///    Creates a relative path from one file or folder (first parameter) relative to another file or folder (second
-      ///    parameter).
-      ///    Returns the original path if a relative path could not be created
+      ///    Returns a relative path from one file or folder <paramref name="originalPath" /> relative to another file or folder
+      ///    <paramref name="relativeToPath" />.    The original path if a relative path could not be created
       /// </summary>
+      /// <param name="originalPath">File or folder absolute path</param>
+      /// <param name="relativeToPath">
+      ///    File or folder path used to create the related path (e.g. result will be relative to this parameter)
+      /// </param>
+      /// <param name="useUnixPathSeparator">
+      ///    Should we use the unix character separator (/) to format the resulting path. Default is <c>false</c>
+      /// </param>
+      /// <param name="appendDirectorySeparatorAtEndOfRelativePath">
+      ///    Should we add a character separator as the end of the relative path (for a folder only). Default is <c>true</c>
+      /// </param>
       /// <example>
-      ///    CreateRelativePath("C:\A\B\C\file1.txt", "C:\A\B\D\file2.txt") returns "..\C\file1.txt"
+      ///    CreateRelativePath("C:\A\B\C\file1.txt", "C:\A\B\D\file2.txt") returns "..\..\C\file1.txt"
+      ///    CreateRelativePath("C:\A\B\C\D", "C:\A\B\) returns "C\D\"
       /// </example>
-      public static string CreateRelativePath(string originalPath, string relativeToPath, bool useUnixPathSeparator = false)
+      public static string CreateRelativePath(string originalPath, string relativeToPath, bool useUnixPathSeparator = false, bool appendDirectorySeparatorAtEndOfRelativePath = true)
       {
          if (string.IsNullOrEmpty(originalPath) || string.IsNullOrEmpty(relativeToPath))
             return originalPath;
 
          try
          {
-            var originalUri = new Uri(appendDirectorySeparatorChar(originalPath, isRelativeToPath: false));
-            var relativeToUri = new Uri(appendDirectorySeparatorChar(relativeToPath, isRelativeToPath: true));
+            var isFolder = !Path.HasExtension(originalPath);
+            var originalUri = new Uri(sanitizePath(originalPath, isRelativeToPath: false));
+            var relativeToUri = new Uri(sanitizePath(relativeToPath, isRelativeToPath: true));
 
             if (originalUri.Scheme != relativeToUri.Scheme)
                return originalPath;
@@ -300,8 +311,12 @@ namespace OSPSuite.Utility
             if (string.Equals(relativeToUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
                relativePath = relativePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
 
+            if (appendDirectorySeparatorAtEndOfRelativePath && isFolder)
+               relativePath = appendDirectorySeparator(relativePath);
+
+
             if (useUnixPathSeparator)
-               relativePath = relativePath.Replace(Path.DirectorySeparatorChar, '/');
+               relativePath = relativePath.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
             return relativePath;
          }
@@ -312,15 +327,22 @@ namespace OSPSuite.Utility
          }
       }
 
-      private static string appendDirectorySeparatorChar(string path, bool isRelativeToPath)
+      private static string sanitizePath(string path, bool isRelativeToPath)
       {
          var endsWithSeparator = path.EndsWith(Path.DirectorySeparatorChar.ToString());
-         if (endsWithSeparator)
-            return path;
 
-         // Append a slash only if the path is a directory or the path is a file use to base the relativePath to 
-         if (!Path.HasExtension(path) || isRelativeToPath)
+         //The relative path should always end with a separator
+         if (isRelativeToPath)
+         {
+            if (endsWithSeparator)
+               return path;
+
             return appendDirectorySeparator(path);
+         }
+
+         //Absolute argument should not end with separator
+         if (endsWithSeparator)
+            return path.Remove(path.Length - 1);
 
          return path;
       }
