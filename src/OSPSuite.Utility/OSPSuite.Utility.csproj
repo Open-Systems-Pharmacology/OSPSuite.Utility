@@ -11,8 +11,6 @@
     <InformationalVersion>1.0.0.0</InformationalVersion>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <projectUrl>https://github.com/Open-Systems-Pharmacology/$id$</projectUrl>
-    <licenseUrl>https://github.com/Open-Systems-Pharmacology/$id$/blob/master/LICENSE</licenseUrl>
     <PackageProjectUrl>https://github.com/Open-Systems-Pharmacology/OSPSuite.Utility</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/Open-Systems-Pharmacology/Suite/master/logo.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/Open-Systems-Pharmacology/OSPSuite.Utility</RepositoryUrl>
