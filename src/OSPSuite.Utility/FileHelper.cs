@@ -187,7 +187,7 @@ namespace OSPSuite.Utility
       {
          if (!FileExists(fileFullPath1) || !FileExists(fileFullPath2)) return false;
 
-         var hashAlgorithm = HashAlgorithm.Create();
+         var hashAlgorithm = HashAlgorithm.Create("MD5");
          byte[] hashFile1;
          byte[] hashFile2;
          using (var fs = new FileStream(fileFullPath1, FileMode.Open))
@@ -202,30 +202,6 @@ namespace OSPSuite.Utility
 
          return BitConverter.ToString(hashFile1) == BitConverter.ToString(hashFile2);
       }
-
-      /// <summary>
-      ///    Returns <c>false</c> if the path is read only or do not have access to view the permissions otherwise <c>true</c>
-      /// </summary>
-      public static bool HasWriteAccessToFolder(string folderPath)
-      {
-         try
-         {
-            // Attempt to get a list of security permissions from the folder. 
-            // This will raise an exception if the path is read only or do not have access to view the permissions. 
-            Directory.GetAccessControl(folderPath);
-            return true;
-         }
-         catch (UnauthorizedAccessException)
-         {
-            return false;
-         }
-      }
-
-      /// <summary>
-      ///    Returns <c>false</c> if the path is read only or do not have access to view the permissions otherwise <c>true</c>
-      /// </summary>
-      public static bool HasWriteAccessToFolder(DirectoryInfo directoryInfo) =>
-         HasWriteAccessToFolder(directoryInfo.FullName);
 
       /// <summary>
       ///    Copies the <paramref name="source" /> directory into the <paramref name="target" /> directory.

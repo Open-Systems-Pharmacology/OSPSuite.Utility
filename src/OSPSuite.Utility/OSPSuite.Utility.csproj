@@ -1,214 +1,36 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{16EA8E25-7A7D-4405-AF43-BBC6FEBEE49E}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>OSPSuite.Utility</RootNamespace>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>OSPSuite.Utility</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <SccProjectName>
-    </SccProjectName>
-    <SccLocalPath>
-    </SccLocalPath>
-    <SccAuxPath>
-    </SccAuxPath>
-    <SccProvider>
-    </SccProvider>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
+    <Version>1.0.0</Version>
+    <PackageVersion>1.0.0</PackageVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <InformationalVersion>1.0.0.0</InformationalVersion>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <PackageProjectUrl>https://github.com/Open-Systems-Pharmacology/OSPSuite.Utility</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/Open-Systems-Pharmacology/Suite/master/logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/Open-Systems-Pharmacology/OSPSuite.Utility</RepositoryUrl>
+    <PackageTags>open-systems-pharmacology, ospsuite-components</PackageTags>
+    <Description>Utility methods and classes for the Open Systems Pharmacology Suite</Description>
+    <Authors>Open-Systems-Pharmacolog</Authors>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\OSPSuite.Utility.xml</DocumentationFile>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <NoWarn>1591</NoWarn>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
+
+  
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase">
-      <RequiredTargetFramework>3.0</RequiredTargetFramework>
-    </Reference>
+    <Compile Include="..\..\SolutionInfo.cs" Link="Properties\SolutionInfo.cs" />
   </ItemGroup>
+
+  
   <ItemGroup>
-    <Compile Include="..\..\SolutionInfo.cs">
-      <Link>Properties\SolutionInfo.cs</Link>
-    </Compile>
-    <Compile Include="BuilderRepository.cs" />
-    <Compile Include="Collections\ImplementationRepository.cs" />
-    <Compile Include="Collections\IRepository.cs" />
-    <Compile Include="Collections\StartableRepository.cs" />
-    <Compile Include="Container\AssemblyScannerException.cs" />
-    <Compile Include="Container\IoC.cs" />
-    <Compile Include="Container\AssemblyScanner.cs" />
-    <Compile Include="Container\IContainer.cs" />
-    <Compile Include="Container\ContainerExtensions.cs" />
-    <Compile Include="Container\InterfaceResolutionException.cs" />
-    <Compile Include="Data\Aggregate.cs" />
-    <Compile Include="Data\Pivoter.cs" />
-    <Compile Include="Data\PivotInfo.cs" />
-    <Compile Include="DirectoryHelper.cs" />
-    <Compile Include="EnvironmentHelper.cs" />
-    <Compile Include="Events\EventPublisher.cs" />
-    <Compile Include="Events\IEventPublisher.cs" />
-    <Compile Include="Events\IListener.cs" />
-    <Compile Include="Extensions\ArrayExtensions.cs" />
-    <Compile Include="Extensions\ConversionExtensions.cs" />
-    <Compile Include="Extensions\DateTimeExtensions.cs" />
-    <Compile Include="Extensions\EnumerableExtensions.cs" />
-    <Compile Include="Extensions\LatchableExtensions.cs" />
-    <Compile Include="Extensions\SpecificationExtensions.cs" />
-    <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Extensions\TypeExtensions.cs" />
-    <Compile Include="Reflection\TypeForGenericType.cs" />
-    <Compile Include="FileHelper.cs" />
-    <Compile Include="FileLocker\Constants.cs" />
-    <Compile Include="FileLocker\FileAlreadyOpenException.cs" />
-    <Compile Include="FileLocker\FileLocker.cs" />
-    <Compile Include="FileLocker\LockFilePathBuilder.cs" />
-    <Compile Include="ILatchable.cs" />
-    <Compile Include="IMapper.cs" />
-    <Compile Include="Reflection\ExpressionExtensions.cs" />
-    <Compile Include="Reflection\Notifier.cs" />
-    <Compile Include="Reflection\WeakRef.cs" />
-    <Compile Include="Resources\Constants.cs" />
-    <Compile Include="SystemTime.cs" />
-    <Compile Include="Validation\CompositionBusinessRule.cs" />
-    <Compile Include="Validation\InvalidRuleTypeException.cs" />
-    <Compile Include="Validation\ValidatableBusinessRule.cs" />
-    <Compile Include="Visitor\IVisitable.cs" />
-    <Compile Include="Visitor\IVisitor.cs" />
-    <Compile Include="Visitor\AmbiguousVisitMethodException.cs" />
-    <Compile Include="Visitor\VisitorExtensions.cs" />
-    <Compile Include="Visitor\VisitorInvoker.cs" />
-    <Compile Include="Reflection\TypeInspector.cs" />
-    <Compile Include="Validation\BusinessRule.cs" />
-    <Compile Include="Validation\BusinessRuleSet.cs" />
-    <Compile Include="Validation\IValidatable.cs" />
-    <Compile Include="Validation\ValidatableExtensions.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Reflection\PropertyBinder.cs" />
-    <Compile Include="Reflection\ExpressionInspector.cs" />
-    <Compile Include="Reflection\ExpressionInspectorFactory.cs" />
-    <Compile Include="Validation\BusinessRuleExpressions.cs" />
-    <Compile Include="Validation\INotificationFactory.cs" />
-    <Compile Include="ISpecification.cs" />
-    <Compile Include="Validation\ValidationEngine.cs" />
-    <Compile Include="Validation\Notification.cs" />
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Collections\Cache.cs" />
-    <Compile Include="Collections\NotifyList.cs" />
-    <Compile Include="Compression\ICompression.cs" />
-    <Compile Include="Compression\StringCompression.cs" />
-    <Compile Include="Container\Conventions\DefaultRegistrationConvention.cs" />
-    <Compile Include="Container\Conventions\IRegistrationConvention.cs" />
-    <Compile Include="Container\Register.cs" />
-    <Compile Include="Container\RegisterExpression.cs" />
-    <Compile Include="Conversion\ByteArrayConverter.cs" />
-    <Compile Include="EnumHelper.cs" />
-    <Compile Include="Events\IProgressManager.cs" />
-    <Compile Include="Events\ProgressEvents.cs" />
-    <Compile Include="Events\ProgressUpdater.cs" />
-    <Compile Include="Exceptions\OSPSuiteException.cs" />
-    <Compile Include="Extensions\AssemblyExtensions.cs" />
-    <Compile Include="Extensions\DataTableExtensions.cs" />
-    <Compile Include="Extensions\ExceptionExtensions.cs" />
-    <Compile Include="Extensions\ListExtensions.cs" />
-    <Compile Include="Extensions\NotifyCacheExtensions.cs" />
-    <Compile Include="Exceptions\IExceptionManager.cs" />
-    <Compile Include="Format\DefaultFormatter.cs" />
-    <Compile Include="Format\DynamicFormatter.cs" />
-    <Compile Include="Format\FormatterConfigurator.cs" />
-    <Compile Include="Format\FormatterFactory.cs" />
-    <Compile Include="Format\IFormatter.cs" />
-    <Compile Include="Format\NumericFormatter.cs" />
-    <Compile Include="Format\NumericFormatterOptions.cs" />
-    <Compile Include="IStartable.cs" />
-    <Compile Include="Reflection\DelegateFactory.cs" />
-    <Compile Include="Reflection\MissingConstructorWithParametersException.cs" />
-    <Compile Include="Reflection\MissingParameterLessConstructorException.cs" />
-    <Compile Include="Reflection\ReflectionHelper.cs" />
-    <Compile Include="Reflection\TypeSimplifier.cs" />
-    <Compile Include="Collections\NotifyCache.cs" />
-    <Compile Include="ShortGuid.cs" />
-    <Compile Include="Validation\IBusinessRuleSet.cs" />
-    <Compile Include="Visitor\UnableToVisitObjectException.cs" />
-    <Compile Include="Xml\SchemaValidationResult.cs" />
-    <Compile Include="Xml\XmlValidator.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="OSPSuite.Utility.nuspec" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

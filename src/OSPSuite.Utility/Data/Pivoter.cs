@@ -231,7 +231,7 @@ namespace OSPSuite.Utility.Data
 
       private static List<DataRow> getDistinctValuesFor(DataView data, IReadOnlyList<string> fields)
       {
-         return data.ToTable(true, fields.ToArray()).AsEnumerable().ToList();
+         return data.ToTable(true, fields.ToArray()).Rows.Cast<DataRow>().ToList();
       }
 
       private static string getColumnNameFor(string aggregateName, string datafield)
@@ -300,7 +300,7 @@ namespace OSPSuite.Utility.Data
       private static object getData(DataView data, string filter, string dataField, Aggregate aggregate)
       {
          var filteredRows = data.Table.Select(filter);
-         var objList = filteredRows.Select(x => x.Field<object>(dataField)).ToArray();
+         var objList = filteredRows.Select(x => x[dataField]).ToArray();
 
          return aggregate.PerformAggregation(objList) ?? DBNull.Value;
       }
