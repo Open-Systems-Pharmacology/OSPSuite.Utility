@@ -77,8 +77,8 @@ namespace OSPSuite.Utility.Events
    public class ProgressUpdater : IProgressUpdater
    {
       private readonly IEventPublisher _eventPublisher;
-      private int _numberOfIterations;
-      private int _currentIteration;
+      protected int _numberOfIterations;
+      protected int _currentIteration;
 
       public ProgressUpdater(IEventPublisher eventPublisher)
       {
