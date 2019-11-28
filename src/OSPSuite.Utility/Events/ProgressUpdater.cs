@@ -110,12 +110,12 @@ namespace OSPSuite.Utility.Events
       public virtual void ReportProgress(int iteration, int numberOfIterations, string message)
       {
          _currentIteration = iteration;
-         _eventPublisher.PublishEvent(new ProgressingEvent(iteration, percentFrom(iteration, numberOfIterations), message));
+         _eventPublisher.PublishEvent(new ProgressingEvent(iteration, PercentFrom(iteration, numberOfIterations), message));
       }
 
       public virtual void ReportStatusMessage(string message) => _eventPublisher.PublishEvent(new StatusMessageEvent(message));
 
-      private int percentFrom(int iteration, int numberOfIterations)
+      protected virtual int PercentFrom(int iteration, int numberOfIterations)
       {
          return (int) Math.Floor((double) iteration * 100 / numberOfIterations);
       }
