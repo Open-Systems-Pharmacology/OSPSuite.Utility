@@ -2,7 +2,7 @@
 
 namespace OSPSuite.Utility.Tests
 {
-   public class ContextSpecification<T> : AbstractContextSpecification<T>
+   public abstract class ContextSpecification<T> : AbstractContextSpecification<T>
    {
    }
 }

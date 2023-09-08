@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -14,9 +15,9 @@ namespace OSPSuite.Utility.Visitor
    {
       private static readonly ITypeSimplifier _typeSimplifier = new TypeSimplifier();
       private static readonly string _visitMethodName;
-      private static readonly ICache<string, MethodInfo> _visitMethodCache = new Cache<string, MethodInfo> {OnMissingKey = x => null};
+      private static readonly ICache<string, MethodInfo> _visitMethodCache = new Cache<string, MethodInfo> { OnMissingKey = x => null };
       private static readonly ReaderWriterLockSlim _cacheLock = new ReaderWriterLockSlim();
-
+      private static readonly DummyMethodInfo _methodDoesNotExistMethodInfo = new DummyMethodInfo();
       static VisitorInvoker()
       {
          //cache visit name
@@ -71,10 +72,10 @@ namespace OSPSuite.Utility.Visitor
          //return list of all type in IVisitor<Type> from the visitor
          var allVisitableTypes = visitor.GetDeclaredTypesForGeneric(typeof(IVisitor<>));
 
-         //return all possible implementations of our visitor that match the objecToVisit type
+         //return all possible implementations of our visitor that match the objectToVisit type
          var possibleImplementations = from genericType in allVisitableTypes
-            where genericType.DeclaredType.IsAssignableFrom(typeOfObjectToVisit)
-            select genericType;
+                                       where genericType.DeclaredType.IsAssignableFrom(typeOfObjectToVisit)
+                                       select genericType;
 
          //return the visitor implementations that best fit the object to visit, if one exists
          return resolveVisitorImplementationType(possibleImplementations.ToList(), visitor, typeOfObjectToVisit);
@@ -86,7 +87,7 @@ namespace OSPSuite.Utility.Visitor
          if (allPossibleImplementations.Count == 0)
             return null;
 
-         //one macthing signature that the one
+         //one matching signature that the one
          if (allPossibleImplementations.Count == 1)
             return allPossibleImplementations[0].GenericType;
 
@@ -114,13 +115,10 @@ namespace OSPSuite.Utility.Visitor
          {
             if (visitor.IsAnImplementationOf<IStrictVisitor>())
                throw new UnableToVisitObjectException(visitor, objectToVisit.GetType());
-
-            //Nothing to do
-            return;
          }
 
          var key = getKeyFor(visitor, objectToVisit);
-         var method = visitorType.GetMethod(_visitMethodName);
+         var method = visitorType?.GetMethod(_visitMethodName) ?? _methodDoesNotExistMethodInfo;
 
          _cacheLock.EnterWriteLock();
          try
@@ -138,7 +136,58 @@ namespace OSPSuite.Utility.Visitor
 
       private static void invokeVisitMethod<T>(IVisitor visitor, T objectToVisit, MethodInfo method)
       {
-         method.Invoke(visitor, new object[] {objectToVisit});
+         if (method == _methodDoesNotExistMethodInfo)
+            return;
+         
+         method.Invoke(visitor, new object[] { objectToVisit });
+      }
+
+      /// <summary>
+      /// Purely internal class to indicate that a method was not found
+      /// </summary>
+      private class DummyMethodInfo : MethodInfo
+      {
+         public override object[] GetCustomAttributes(bool inherit)
+         {
+            throw new NotImplementedException();
+         }
+
+         public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+         {
+            throw new NotImplementedException();
+         }
+
+         public override bool IsDefined(Type attributeType, bool inherit)
+         {
+            throw new NotImplementedException();
+         }
+
+         public override Type DeclaringType { get; }
+         public override string Name { get; }
+         public override Type ReflectedType { get; }
+         public override MethodImplAttributes GetMethodImplementationFlags()
+         {
+            throw new NotImplementedException();
+         }
+
+         public override ParameterInfo[] GetParameters()
+         {
+            throw new NotImplementedException();
+         }
+
+         public override object Invoke(object obj, BindingFlags invokeAttr, Binder binder, object[] parameters, CultureInfo culture)
+         {
+            throw new NotImplementedException();
+         }
+
+         public override MethodAttributes Attributes { get; }
+         public override RuntimeMethodHandle MethodHandle { get; }
+         public override MethodInfo GetBaseDefinition()
+         {
+            throw new NotImplementedException();
+         }
+
+         public override ICustomAttributeProvider ReturnTypeCustomAttributes { get; }
       }
    }
 }
