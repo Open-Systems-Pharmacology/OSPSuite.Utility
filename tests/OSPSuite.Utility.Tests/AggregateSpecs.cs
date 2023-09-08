@@ -13,7 +13,7 @@ namespace OSPSuite.Utility.Tests
          sut = new Aggregate<double, double>();
       }
    }
-
+   
    public class When_aggregating_values_for_sum : concern_for_Aggregate
    {
       protected override void Context()

@@ -1,5 +1,5 @@
 configuration: Debug
-image: Visual Studio 2019
+image: Visual Studio 2022
 
 # hack until donet patching works with PR
 init: 
@@ -7,7 +7,7 @@ init:
 
 
 environment:
-  app_version: '4.0.0'
+  app_version: '4.1.0'
 
 version: '$(app_version).{build}'
 

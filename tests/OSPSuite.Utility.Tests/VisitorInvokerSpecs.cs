@@ -148,7 +148,7 @@ namespace OSPSuite.Utility.Tests
          The.Action(() => VisitorInvoker.InvokeVisit(_visitor, _myVisitableClass)).ShouldThrowAn<UnableToVisitObjectException>();
       }
    }
-
+   
    public class When_visiting_a_visitor_for_an_object_implementing_a_generic_type : concern_for_VisitorInvoker
    {
       private IVisitor<IMyGenericClass<IMySimpleClass>> _visitor;
