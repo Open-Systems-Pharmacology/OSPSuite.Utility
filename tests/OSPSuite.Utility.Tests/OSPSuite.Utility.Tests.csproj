@@ -1,11 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
-
-    <IsPackable>false</IsPackable>
+    <TargetFramework>net8.0</TargetFramework>      
+	<IsPackable>false</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Appveyor.TestLogger" Version="2.0.0" />
     <PackageReference Include="FakeItEasy" Version="5.1.1" />
@@ -14,9 +11,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="OSPSuite.BDDHelper" Version="3.1.0.1" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\OSPSuite.Utility\OSPSuite.Utility.csproj" />
   </ItemGroup>
-
 </Project>

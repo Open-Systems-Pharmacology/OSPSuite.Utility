@@ -101,29 +101,29 @@ namespace OSPSuite.Utility.Tests
 
    public class When_being_released : ContextSpecification<IPropertyBinder<IAnInterface, string>>
    {
-      private IAnInterface target;
+      private IAnInterface _target;
       private WeakReference _wr;
+
+      protected override void Context()
+      {
+         _target = new AnImplementation {FirstName = "toto"};
+         var property = typeof(IAnInterface).GetProperty("FirstName");
+         sut = new PropertyBinder<IAnInterface, string>(property);
+         sut.SetValue(_target, "tutu");
+         _wr = new WeakReference(_target);
+      }
+
+      protected override void Because()
+      {
+         _target = null;
+         sut = null;
+         GC.Collect();
+      }
 
       [Observation]
       public void should_not_hold_any_references_to_the_target()
       {
          _wr.IsAlive.ShouldBeFalse();
-      }
-
-      protected override void Context()
-      {
-         target = new AnImplementation {FirstName = "toto"};
-         var property = typeof(IAnInterface).GetProperty("FirstName");
-         sut = new PropertyBinder<IAnInterface, string>(property);
-         sut.SetValue(target, "tutu");
-      }
-
-      protected override void Because()
-      {
-         _wr = new WeakReference(target);
-         target = null;
-         sut = null;
-         GC.Collect();
       }
    }
 
