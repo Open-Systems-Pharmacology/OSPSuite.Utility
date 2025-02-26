@@ -13,6 +13,7 @@
     <Description>Utility methods and classes for the Open Systems Pharmacology Suite</Description>
     <Authors>Open-Systems-Pharmacolog</Authors>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   
