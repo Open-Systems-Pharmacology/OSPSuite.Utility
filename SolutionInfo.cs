@@ -4,6 +4,6 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyCompany("Open Systems Pharmacology Community")]
 [assembly: AssemblyProduct("OSPSuite.Utility")]
-[assembly: AssemblyCopyright("Copyright © 2017 - present - Open Systems Pharmacology Community")]
+[assembly: AssemblyCopyright("Copyright ï¿½ 2025 - present - Open Systems Pharmacology Community")]
 [assembly: ComVisible(false)]
 [assembly: InternalsVisibleTo("OSPSuite.Utility.Tests")]
