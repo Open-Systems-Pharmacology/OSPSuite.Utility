@@ -10,10 +10,6 @@ namespace OSPSuite.Utility.Conversion
    {
       private readonly JsonSerializerOptions _options = new JsonSerializerOptions { NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals };
 
-      public ByteArrayConverter()
-      {
-      }
-
       public byte[] ConvertToByteArray<T>(T[] arrayToConvert)
       {
          if (typeof(T).IsAnImplementationOf<byte>())
