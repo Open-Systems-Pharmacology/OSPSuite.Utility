@@ -66,6 +66,10 @@ namespace OSPSuite.Utility.Tests
          {
             _doubleArray[i] = random.NextDouble() * 10;
          }
+
+         _doubleArray[0] = double.PositiveInfinity;
+         _doubleArray[1] = double.NegativeInfinity;
+         _doubleArray[2] = double.NaN;
       }
 
       protected override void Because()
