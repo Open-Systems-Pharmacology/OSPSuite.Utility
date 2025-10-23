@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
     - main
+ 
+permissions:
+  packages: read
+  contents: read
 
 env:
   MAJOR: 4
