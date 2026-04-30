@@ -34,6 +34,7 @@ namespace OSPSuite.Utility.Conversion
       // Reads payloads written by BinaryFormatter before the JSON migration. Uses
       // NrbfDecoder so the path works on .NET 9+ without
       // EnableUnsafeBinaryFormatterSerialization or the unsupported compat package.
+      // See: https://learn.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-migration-guide/read-nrbf-payloads
       private static T[] convertFromLegacyNrbfPayload<T>(byte[] byteArray)
       {
          using var stream = new MemoryStream(byteArray);

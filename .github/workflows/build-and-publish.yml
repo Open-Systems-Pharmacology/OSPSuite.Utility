@@ -9,9 +9,9 @@ permissions:
   packages: write
 
 env:
-  MAJOR: 4
-  MINOR: 1
-  MINORMINOR: 1 
+  MAJOR: 5
+  MINOR: 0
+  MINORMINOR: 0
   RUN: ${{ github.run_number }}
 
 jobs:
@@ -19,12 +19,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: 'true'
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -50,10 +50,10 @@ jobs:
         run: dotnet pack .\OSPSuite.Utility.sln --no-build --no-restore -o ./ -p:PackageVersion=${{env.APP_VERSION}} --configuration=Debug --no-build
 
       - name: Push test log as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: testLog_Windows
-          path: ./testLog*.html
+          path: ./**/testLog*.html
 
       - name: Publish to GitHub registry
         run: dotnet nuget push *.nupkg --source https://nuget.pkg.github.com/${{github.repository_owner}}/index.json --api-key ${{ secrets.GITHUB_TOKEN }}
