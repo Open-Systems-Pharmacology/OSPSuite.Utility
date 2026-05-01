@@ -2,7 +2,7 @@
 
   
   <PropertyGroup>
-    <TargetFramework>net8</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>OSPSuite.Utility</AssemblyName>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
@@ -14,7 +14,6 @@
     <Authors>Open-Systems-Pharmacolog</Authors>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
 
   
@@ -32,7 +31,7 @@
 
   
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.6" />
+    <PackageReference Include="System.Formats.Nrbf" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

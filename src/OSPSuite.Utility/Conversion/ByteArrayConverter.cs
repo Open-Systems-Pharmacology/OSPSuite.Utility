@@ -1,5 +1,6 @@
+using System;
+using System.Formats.Nrbf;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OSPSuite.Utility.Extensions;
@@ -26,20 +27,24 @@ namespace OSPSuite.Utility.Conversion
          }
          catch (JsonException)
          {
-            return convertFromByteArrayUnsafe<T>(byteArray);
+            return convertFromLegacyNrbfPayload<T>(byteArray);
          }
       }
 
-      /// <summary>
-      ///    Provides compatibility for saved projects. Must be removed after .NET8
-      /// </summary>
-      private T[] convertFromByteArrayUnsafe<T>(byte[] byteArray)
+      // Reads payloads written by BinaryFormatter before the JSON migration. Uses
+      // NrbfDecoder so the path works on .NET 9+ without
+      // EnableUnsafeBinaryFormatterSerialization or the unsupported compat package.
+      // See: https://learn.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-migration-guide/read-nrbf-payloads
+      private static T[] convertFromLegacyNrbfPayload<T>(byte[] byteArray)
       {
-         var formatter = new BinaryFormatter();
-         using (var mem = new MemoryStream(byteArray))
-         {
-            return (T[])formatter.Deserialize(mem);
-         }
+         using var stream = new MemoryStream(byteArray);
+         var record = NrbfDecoder.Decode(stream);
+
+         if (record is SZArrayRecord<T> primitiveArray)
+            return primitiveArray.GetArray();
+
+         throw new InvalidOperationException(
+            $"Unsupported legacy NRBF payload for element type '{typeof(T).FullName}'.");
       }
    }
 }
