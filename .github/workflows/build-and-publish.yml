@@ -9,9 +9,9 @@ permissions:
   packages: write
 
 env:
-  MAJOR: 4
-  MINOR: 1
-  MINORMINOR: 1
+  MAJOR: 5
+  MINOR: 0
+  MINORMINOR: 0
   RUN: ${{ github.run_number }}
 
 jobs:
