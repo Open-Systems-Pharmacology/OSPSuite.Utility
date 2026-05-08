@@ -1,5 +1,6 @@
 * text
 
+*.bin binary
 *.bmp binary
 *.dll binary
 *.gif binary

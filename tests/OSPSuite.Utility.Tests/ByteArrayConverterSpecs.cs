@@ -181,4 +181,93 @@ namespace OSPSuite.Utility.Tests
             _result[i].ShouldBeEqualTo(_expected[i]);
       }
    }
+
+   public class When_converting_a_nullable_double_array_to_a_byte_array : concern_for_ByteArrayConverter
+   {
+      private double?[] _nullableDoubleArray;
+      private byte[] _byteArray;
+
+      protected override void Context()
+      {
+         base.Context();
+         _nullableDoubleArray = new double?[]
+         {
+            1.5,
+            null,
+            double.PositiveInfinity,
+            double.NegativeInfinity,
+            double.NaN,
+            null,
+            -2.25,
+         };
+      }
+
+      protected override void Because()
+      {
+         _byteArray = sut.ConvertToByteArray(_nullableDoubleArray);
+      }
+
+      [Observation]
+      public void should_return_a_byte_array()
+      {
+         _byteArray.ShouldNotBeNull();
+      }
+
+      [Observation]
+      public void should_be_able_to_convert_the_resulting_byte_array_back_to_the_original_nullable_double_array()
+      {
+         var convertedArray = sut.ConvertFromByteArray<double?>(_byteArray);
+         convertedArray.Length.ShouldBeEqualTo(_nullableDoubleArray.Length);
+         for (var i = 0; i < _nullableDoubleArray.Length; i++)
+            convertedArray[i].ShouldBeEqualTo(_nullableDoubleArray[i]);
+      }
+   }
+
+   public class When_converting_a_legacy_binaryformatter_nullable_double_array_with_nulls : concern_for_ByteArrayConverter
+   {
+      private static readonly double?[] _expected =
+      {
+         1.5,
+         null,
+         double.PositiveInfinity,
+         double.NegativeInfinity,
+         double.NaN,
+         null,
+         -2.25,
+      };
+
+      private double?[] _result;
+
+      protected override void Because()
+      {
+         _result = sut.ConvertFromByteArray<double?>(LoadLegacyFixture("nullable_double_array_with_nulls.bin"));
+      }
+
+      [Observation]
+      public void should_return_the_original_nullable_double_array_preserving_nulls_and_special_values()
+      {
+         _result.Length.ShouldBeEqualTo(_expected.Length);
+         for (var i = 0; i < _expected.Length; i++)
+            _result[i].ShouldBeEqualTo(_expected[i]);
+      }
+   }
+
+   public class When_converting_a_legacy_binaryformatter_nullable_float_array_with_nulls : concern_for_ByteArrayConverter
+   {
+      private static readonly float?[] _expected = { 1.5f, null, -3.5f };
+      private float?[] _result;
+
+      protected override void Because()
+      {
+         _result = sut.ConvertFromByteArray<float?>(LoadLegacyFixture("nullable_float_array_with_nulls.bin"));
+      }
+
+      [Observation]
+      public void should_return_the_original_nullable_float_array_preserving_nulls()
+      {
+         _result.Length.ShouldBeEqualTo(_expected.Length);
+         for (var i = 0; i < _expected.Length; i++)
+            _result[i].ShouldBeEqualTo(_expected[i]);
+      }
+   }
 }
