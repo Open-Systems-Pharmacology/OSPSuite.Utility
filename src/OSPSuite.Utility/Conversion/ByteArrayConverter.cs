@@ -43,6 +43,34 @@ namespace OSPSuite.Utility.Conversion
          if (record is SZArrayRecord<T> primitiveArray)
             return primitiveArray.GetArray();
 
+         // Nullable<U>[] is stored by BinaryFormatter as an SZArray of objects
+         // whose elements are either null (for a null Nullable<U>) or a boxed U
+         // (for a non-null Nullable<U>). NrbfDecoder surfaces this as
+         // SZArrayRecord<SerializationRecord> with PrimitiveTypeRecord<U> entries.
+         if (Nullable.GetUnderlyingType(typeof(T)) is not null
+             && record is SZArrayRecord<SerializationRecord> objectArray)
+         {
+            var elements = objectArray.GetArray();
+            var result = new T[elements.Length];
+            for (var i = 0; i < elements.Length; i++)
+            {
+               var element = elements[i];
+               if (element is null)
+                  continue;
+
+               if (element is PrimitiveTypeRecord primitive)
+               {
+                  result[i] = (T)primitive.Value;
+                  continue;
+               }
+
+               throw new InvalidOperationException(
+                  $"Unsupported NRBF element record '{element.GetType().Name}' inside Nullable<{typeof(T).GenericTypeArguments[0].Name}> array.");
+            }
+
+            return result;
+         }
+
          throw new InvalidOperationException(
             $"Unsupported legacy NRBF payload for element type '{typeof(T).FullName}'.");
       }
