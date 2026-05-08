@@ -52,22 +52,22 @@ namespace OSPSuite.Utility.Conversion
          {
             var elements = objectArray.GetArray();
             var result = new T[elements.Length];
-            for (var i = 0; i < elements.Length; i++)
+            
+            elements.Each((element, i) =>
             {
-               var element = elements[i];
                if (element is null)
-                  continue;
+                  return;
 
                if (element is PrimitiveTypeRecord primitive)
                {
                   result[i] = (T)primitive.Value;
-                  continue;
+                  return;
                }
 
                throw new InvalidOperationException(
                   $"Unsupported NRBF element record '{element.GetType().Name}' inside Nullable<{typeof(T).GenericTypeArguments[0].Name}> array.");
-            }
-
+            });
+            
             return result;
          }
 
