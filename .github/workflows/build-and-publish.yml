@@ -23,9 +23,6 @@ jobs:
         with:
           submodules: 'true'
 
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v3
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -41,7 +38,7 @@ jobs:
           echo "APP_VERSION=${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MINORMINOR }}.${{ env.RUN }}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Build
-        run: msbuild OSPSuite.Utility.sln /p:Version=${{env.APP_VERSION}}
+        run: dotnet build OSPSuite.Utility.sln /p:Version=${{env.APP_VERSION}} --configuration Debug
 
       - name : Test
         run: dotnet test OSPSuite.Utility.sln -v normal --no-build --configuration Debug --logger:"html;LogFileName=../testLog_Windows.html"

@@ -187,7 +187,7 @@ namespace OSPSuite.Utility
       {
          if (!FileExists(fileFullPath1) || !FileExists(fileFullPath2)) return false;
 
-         var hashAlgorithm = HashAlgorithm.Create("MD5");
+         var hashAlgorithm = MD5.Create();
          byte[] hashFile1;
          byte[] hashFile2;
          using (var fs = new FileStream(fileFullPath1, FileMode.Open))

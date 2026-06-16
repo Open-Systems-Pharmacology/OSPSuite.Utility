@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.Serialization;
 
 namespace OSPSuite.Utility.Exceptions
 {
@@ -17,10 +16,6 @@ namespace OSPSuite.Utility.Exceptions
       }
 
       public OSPSuiteException(string message, Exception innerException) : base(message, innerException)
-      {
-      }
-
-      protected OSPSuiteException(SerializationInfo info, StreamingContext context) : base(info, context)
       {
       }
    }
