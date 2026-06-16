@@ -187,17 +187,19 @@ namespace OSPSuite.Utility
       {
          if (!FileExists(fileFullPath1) || !FileExists(fileFullPath2)) return false;
 
-         var hashAlgorithm = MD5.Create();
          byte[] hashFile1;
          byte[] hashFile2;
-         using (var fs = new FileStream(fileFullPath1, FileMode.Open))
+         using (var hashAlgorithm = MD5.Create())
          {
-            hashFile1 = hashAlgorithm.ComputeHash(fs);
-         }
+            using (var fs = new FileStream(fileFullPath1, FileMode.Open))
+            {
+               hashFile1 = hashAlgorithm.ComputeHash(fs);
+            }
 
-         using (var fs = new FileStream(fileFullPath2, FileMode.Open))
-         {
-            hashFile2 = hashAlgorithm.ComputeHash(fs);
+            using (var fs = new FileStream(fileFullPath2, FileMode.Open))
+            {
+               hashFile2 = hashAlgorithm.ComputeHash(fs);
+            }
          }
 
          return BitConverter.ToString(hashFile1) == BitConverter.ToString(hashFile2);
