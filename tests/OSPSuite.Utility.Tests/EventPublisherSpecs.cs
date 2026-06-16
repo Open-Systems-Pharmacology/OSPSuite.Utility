@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using FakeItEasy;
 using OSPSuite.BDDHelper;
@@ -128,6 +130,104 @@ namespace OSPSuite.Utility.Tests
          fakeEvent1 = A.Fake<FakeEvent1>();
          fakeEvent2 = A.Fake<FakeEvent2>();
          sut.AddListener(listener);
+      }
+   }
+
+   public class When_publishing_events_concurrently_while_listeners_are_added_and_removed : concern_for_EventPublisher
+   {
+      private List<Exception> _exceptions;
+      private int _completedOperations;
+      private const int _threadCount = 8;
+      private const int _iterations = 5000;
+      // publisher loops + mutator loops, each running _threadCount x _iterations operations
+      private const int _expectedOperationCount = 2 * _threadCount * _iterations;
+
+      protected override void Context()
+      {
+         base.Context();
+         _exceptions = new List<Exception>();
+         // seed a handful of stable listeners so every publish has a non-trivial list to snapshot
+         for (var i = 0; i < 50; i++)
+         {
+            sut.AddListener(new StressListener());
+         }
+      }
+
+      protected override void Because()
+      {
+         var startSignal = new ManualResetEventSlim(false);
+         var threads = new List<Thread>();
+
+         // publisher threads: each PublishEvent prunes and snapshots the listener list
+         for (var t = 0; t < _threadCount; t++)
+         {
+            threads.Add(threadRunning(startSignal, () =>
+            {
+               for (var i = 0; i < _iterations; i++)
+               {
+                  sut.PublishEvent(new object());
+                  Interlocked.Increment(ref _completedOperations);
+               }
+            }));
+         }
+
+         // mutator threads: churn the listener list so Add (which can grow the backing
+         // array) overlaps the publishers' snapshot
+         for (var t = 0; t < _threadCount; t++)
+         {
+            threads.Add(threadRunning(startSignal, () =>
+            {
+               for (var i = 0; i < _iterations; i++)
+               {
+                  var listener = new StressListener();
+                  sut.AddListener(listener);
+                  sut.RemoveListener(listener);
+                  Interlocked.Increment(ref _completedOperations);
+               }
+            }));
+         }
+
+         threads.ForEach(x => x.Start());
+         startSignal.Set();
+         threads.ForEach(x => x.Join());
+      }
+
+      private Thread threadRunning(ManualResetEventSlim startSignal, Action action)
+      {
+         return new Thread(() =>
+         {
+            startSignal.Wait();
+            try
+            {
+               action();
+            }
+            catch (Exception ex)
+            {
+               lock (_exceptions)
+               {
+                  _exceptions.Add(ex);
+               }
+            }
+         });
+      }
+
+      // Single observation on purpose: the BDD harness re-runs Context/Because per [Observation],
+      // so a second observation would silently re-run the whole stress loop.
+      [Observation]
+      public void should_complete_all_concurrent_operations_without_throwing()
+      {
+         var messages = string.Join(Environment.NewLine, _exceptions.Select(ex => $"{ex.GetType().Name}: {ex.Message}"));
+         messages.ShouldBeEqualTo(string.Empty);
+         // guard against a vacuous pass: confirm every publisher and mutator thread ran its full loop
+         _completedOperations.ShouldBeEqualTo(_expectedOperationCount);
+      }
+
+      private class StressListener : IListener<object>
+      {
+         public void Handle(object eventToHandle)
+         {
+            // no-op; the test exercises the publish/listener-list machinery, not the handler
+         }
       }
    }
 
