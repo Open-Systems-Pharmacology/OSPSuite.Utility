@@ -90,18 +90,16 @@ namespace OSPSuite.Utility.Events
          }
       }
 
+      // Caller must hold the lock on _listeners (PublishEvent does).
       private void pruneReferences()
       {
-         doWithinLock(() =>
+         for (var i = _listeners.Count - 1; i >= 0; i--)
          {
-            for (var i = _listeners.Count - 1; i >= 0; i--)
+            if (_listeners[i].Target == null)
             {
-               if (_listeners[i].Target == null)
-               {
-                  _listeners.RemoveAt(i);
-               }
+               _listeners.RemoveAt(i);
             }
-         });
+         }
       }
    }
 }
