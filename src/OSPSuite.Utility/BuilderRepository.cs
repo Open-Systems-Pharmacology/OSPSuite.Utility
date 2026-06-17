@@ -60,7 +60,6 @@ namespace OSPSuite.Utility
                //more than one implementation? try to find the one that matches the best the given type
                var allGenericTypes = allBuilderForType.SelectMany(t => t.GetDeclaredTypesForGeneric(_genericBuilderType)).ToList();
 
-               //one builder implements two ITEXBuilder<> does not make sens
                if (allGenericTypes.Count != allBuilderForType.Count)
                   throw new InvalidOperationException($"Cannot resolve the Builder for type '{type}'. It seems that one builder implements more than one generic interface");
 
