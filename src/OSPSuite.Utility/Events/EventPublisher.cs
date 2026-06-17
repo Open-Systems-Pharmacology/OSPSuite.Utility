@@ -22,17 +22,25 @@ namespace OSPSuite.Utility.Events
 
       public void PublishEvent<T>(T eventToPublish)
       {
-         //Before publishing, prunes the list of listener and remove dead references
-         pruneReferences();
+         List<WeakRef<IListener>> listeners;
+         lock (_listeners)
+         {
+            //Before publishing, prunes the list of listener and remove dead references
+            pruneReferences();
 
-         // Determine if a Listener handles the message of type T
-         // by trying to cast it
-         foreach (var listener in _listeners.ToList())
+            // Snapshot the listeners while holding the lock so the dispatch loop below
+            // cannot race with a concurrent Add/Remove/prune mutating the same list
+            listeners = _listeners.ToList();
+         }
+
+         // Determine if a Listener handles the message of type T by trying to cast it.
+         // Dispatch happens outside the lock so handlers never run while the lock is held.
+         foreach (var listener in listeners)
          {
             var receiver = listener.Target as IListener<T>;
             if (receiver == null) continue;
 
-            // We are using SyncronizationContext to handle moving processing
+            // We are using SynchronizationContext to handle moving processing
             // from a background thread to the UI thread without having 
             // to worry about it in the View or Presenter
             _context.Send(state => _exceptionManager.Execute(() => receiver.Handle(eventToPublish)), null);
@@ -82,18 +90,16 @@ namespace OSPSuite.Utility.Events
          }
       }
 
+      // Caller must hold the lock on _listeners (PublishEvent does).
       private void pruneReferences()
       {
-         doWithinLock(() =>
+         for (var i = _listeners.Count - 1; i >= 0; i--)
          {
-            for (var i = _listeners.Count - 1; i >= 0; i--)
+            if (_listeners[i].Target == null)
             {
-               if (_listeners[i].Target == null)
-               {
-                  _listeners.RemoveAt(i);
-               }
+               _listeners.RemoveAt(i);
             }
-         });
+         }
       }
    }
 }

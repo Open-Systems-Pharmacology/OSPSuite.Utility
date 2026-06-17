@@ -7,7 +7,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <PackageProjectUrl>https://github.com/Open-Systems-Pharmacology/OSPSuite.Utility</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/Open-Systems-Pharmacology/Suite/master/logo.png</PackageIconUrl>
+    <PackageIcon>logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/Open-Systems-Pharmacology/OSPSuite.Utility</RepositoryUrl>
     <PackageTags>open-systems-pharmacology, ospsuite-components</PackageTags>
     <Description>Utility methods and classes for the Open Systems Pharmacology Suite</Description>
@@ -24,6 +24,10 @@
   
   <ItemGroup>
     <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\..\logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

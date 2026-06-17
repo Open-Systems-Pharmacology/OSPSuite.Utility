@@ -25,7 +25,8 @@ namespace OSPSuite.Utility
       private readonly ITypeSimplifier _typeSimplifier;
       private List<TBuilder> _allBuilders;
       private readonly ICache<Type, TBuilder> _allBuilderCache = new Cache<Type, TBuilder>();
-      private bool _isInitialized;
+      private readonly object _locker = new object();
+      private volatile bool _isInitialized;
 
       protected BuilderRepository(IContainer container, Type genericBuilderType)
       {
@@ -37,35 +38,41 @@ namespace OSPSuite.Utility
       public TBuilder BuilderFor(Type type)
       {
          Start();
-         if (_allBuilderCache.Contains(type))
-            return _allBuilderCache[type];
 
-         var allBuilderForType = _allBuilders.Where(b => b.IsSatisfiedBy(type)).ToList();
-
-         //No Builder found. Return null
-         if (allBuilderForType.Count == 0)
-            return null;
-
-         if (allBuilderForType.Count == 1)
-            _allBuilderCache.Add(type, allBuilderForType[0]);
-         else
+         // Resolve and cache under the lock: BuilderFor can be called concurrently (e.g. parallel
+         // qualification export), and the cache Contains-then-Add below is otherwise a check-then-act
+         // race where two threads Add the same key -> "An item with the key '...' has already been added"
+         lock (_locker)
          {
-            //more than one implementation? try to find the one that matches the best the given type
-            var allGenericTypes = allBuilderForType.SelectMany(t => t.GetDeclaredTypesForGeneric(_genericBuilderType)).ToList();
+            if (_allBuilderCache.Contains(type))
+               return _allBuilderCache[type];
 
-            //one builder implements two ITEXBuilder<> does not make sens
-            if (allGenericTypes.Count != allBuilderForType.Count)
-               throw new InvalidOperationException($"Cannot resolve the Builder for type '{type}'. It seems that one builder implements more than one generic interface");
+            var allBuilderForType = _allBuilders.Where(b => b.IsSatisfiedBy(type)).ToList();
 
-            //finds the one that matches the most the implementation
-            var simplifiedImplementation = _typeSimplifier.Simplify(allGenericTypes).ToList();
-            if (simplifiedImplementation.Count == 1)
-               _allBuilderCache.Add(type, allBuilderForType.ElementAt(allGenericTypes.IndexOf(simplifiedImplementation[0])));
-            else
+            //No Builder found. Return null
+            if (allBuilderForType.Count == 0)
                return null;
-         }
 
-         return _allBuilderCache[type];
+            if (allBuilderForType.Count == 1)
+               _allBuilderCache.Add(type, allBuilderForType[0]);
+            else
+            {
+               //more than one implementation? try to find the one that matches the best the given type
+               var allGenericTypes = allBuilderForType.SelectMany(t => t.GetDeclaredTypesForGeneric(_genericBuilderType)).ToList();
+
+               if (allGenericTypes.Count != allBuilderForType.Count)
+                  throw new InvalidOperationException($"Cannot resolve the Builder for type '{type}'. It seems that one builder implements more than one generic interface");
+
+               //finds the one that matches the most the implementation
+               var simplifiedImplementation = _typeSimplifier.Simplify(allGenericTypes).ToList();
+               if (simplifiedImplementation.Count == 1)
+                  _allBuilderCache.Add(type, allBuilderForType.ElementAt(allGenericTypes.IndexOf(simplifiedImplementation[0])));
+               else
+                  return null;
+            }
+
+            return _allBuilderCache[type];
+         }
       }
 
       public TBuilder BuilderFor(object objectToBuild)
@@ -76,8 +83,12 @@ namespace OSPSuite.Utility
       public void Start()
       {
          if (_isInitialized) return;
-         _allBuilders = _container.ResolveAll<TBuilder>().ToList();
-         _isInitialized = true;
+         lock (_locker)
+         {
+            if (_isInitialized) return;
+            _allBuilders = _container.ResolveAll<TBuilder>().ToList();
+            _isInitialized = true;
+         }
       }
    }
 }
