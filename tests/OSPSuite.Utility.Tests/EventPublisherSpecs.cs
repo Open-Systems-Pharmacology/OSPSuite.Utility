@@ -13,11 +13,13 @@ namespace OSPSuite.Utility.Tests
    public abstract class concern_for_EventPublisher : ContextSpecification<IEventPublisher>
    {
       private IExceptionManager _exceptionManager;
+      protected RecordingSynchronizationContext _synchronizationContext;
 
       protected override void Context()
       {
          _exceptionManager = new ExceptionManagerForTests();
-         sut = new EventPublisher(new SynchronizationContext(), _exceptionManager);
+         _synchronizationContext = new RecordingSynchronizationContext();
+         sut = new EventPublisher(_synchronizationContext, _exceptionManager);
       }
 
       internal class ExceptionManagerForTests : ExceptionManagerBase
@@ -29,12 +31,58 @@ namespace OSPSuite.Utility.Tests
 
          internal Exception Exception { get; set; }
       }
+
+      // Runs the given action on a fresh thread whose current SynchronizationContext is the one
+      // supplied, so a test can control whether PublishEvent sees itself as running on the
+      // publisher's context thread (pass _synchronizationContext) or off it (pass null). Joining
+      // the thread before returning makes the recorded flags safe to read on the test thread.
+      protected static void runOnThreadWithSynchronizationContext(SynchronizationContext context, Action action)
+      {
+         Exception thrown = null;
+         var thread = new Thread(() =>
+         {
+            SynchronizationContext.SetSynchronizationContext(context);
+            try
+            {
+               action();
+            }
+            catch (Exception ex)
+            {
+               thrown = ex;
+            }
+         });
+         thread.Start();
+         thread.Join();
+         if (thrown != null)
+            throw thrown;
+      }
+
+      // Both Send and Post run the callback synchronously so listener notification stays
+      // deterministic in tests (the default SynchronizationContext.Post would queue to the
+      // ThreadPool and race the observations). The flags record which path PublishEvent chose.
+      protected class RecordingSynchronizationContext : SynchronizationContext
+      {
+         public bool PostWasCalled { get; private set; }
+         public bool SendWasCalled { get; private set; }
+
+         public override void Post(SendOrPostCallback d, object state)
+         {
+            PostWasCalled = true;
+            d(state);
+         }
+
+         public override void Send(SendOrPostCallback d, object state)
+         {
+            SendWasCalled = true;
+            d(state);
+         }
+      }
    }
 
-   public class When_publishing_an_event_on_behalf_of_a_publisher : concern_for_EventPublisher
+   public abstract class concern_for_publishing_an_event : concern_for_EventPublisher
    {
-      private object _eventToPublish;
-      private IListener<object> _listener;
+      protected object _eventToPublish;
+      protected IListener<object> _listener;
 
       protected override void Context()
       {
@@ -43,10 +91,59 @@ namespace OSPSuite.Utility.Tests
          _listener = A.Fake<IListener<object>>();
          sut.AddListener(_listener);
       }
+   }
 
+   public class When_publishing_an_event_on_behalf_of_a_publisher : concern_for_publishing_an_event
+   {
       protected override void Because()
       {
          sut.PublishEvent(_eventToPublish);
+      }
+
+      [Observation]
+      public void should_notify_all_listeners_of_the_event()
+      {
+         A.CallTo(() => _listener.Handle(_eventToPublish)).MustHaveHappened();
+      }
+   }
+
+   public class When_publishing_an_event_from_the_thread_that_owns_the_synchronization_context : concern_for_publishing_an_event
+   {
+      protected override void Because()
+      {
+         // simulate publishing from the UI thread: the publishing thread's current context
+         // is the very context the publisher dispatches to
+         runOnThreadWithSynchronizationContext(_synchronizationContext, () => sut.PublishEvent(_eventToPublish));
+      }
+
+      [Observation]
+      public void should_dispatch_synchronously_through_the_blocking_send_path()
+      {
+         _synchronizationContext.SendWasCalled.ShouldBeTrue();
+         _synchronizationContext.PostWasCalled.ShouldBeFalse();
+      }
+
+      [Observation]
+      public void should_notify_all_listeners_of_the_event()
+      {
+         A.CallTo(() => _listener.Handle(_eventToPublish)).MustHaveHappened();
+      }
+   }
+
+   public class When_publishing_an_event_from_a_thread_that_does_not_own_the_synchronization_context : concern_for_publishing_an_event
+   {
+      protected override void Because()
+      {
+         // simulate publishing from a background thread: the publishing thread does not share
+         // the publisher's context
+         runOnThreadWithSynchronizationContext(null, () => sut.PublishEvent(_eventToPublish));
+      }
+
+      [Observation]
+      public void should_dispatch_through_the_non_blocking_post_path()
+      {
+         _synchronizationContext.PostWasCalled.ShouldBeTrue();
+         _synchronizationContext.SendWasCalled.ShouldBeFalse();
       }
 
       [Observation]
