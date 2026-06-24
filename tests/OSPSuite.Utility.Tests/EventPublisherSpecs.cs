@@ -52,7 +52,8 @@ namespace OSPSuite.Utility.Tests
             }
          });
          thread.Start();
-         thread.Join();
+         if (!thread.Join(TimeSpan.FromSeconds(5)))
+            throw new TimeoutException("Timed out while publishing on the test synchronization-context thread.");
          if (thrown != null)
             throw thrown;
       }
