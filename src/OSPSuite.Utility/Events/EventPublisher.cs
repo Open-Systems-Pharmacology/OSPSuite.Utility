@@ -44,7 +44,7 @@ namespace OSPSuite.Utility.Events
 
          // Decide Send vs Post by thread identity, not by context instance: a thread can have more than
          // one SynchronizationContext instance targeting it. On the context thread, Send dispatches inline
-         // (handlers// run before this returns); from any other thread, Post so the publishing thread is not blocked.
+         // (handlers run before this returns); from any other thread, Post so the publishing thread is not blocked.
          var publishingFromUIThread = ReferenceEquals(Thread.CurrentThread, _capturedUIThread);
 
          // Determine if a Listener handles the message of type T by trying to cast it.
