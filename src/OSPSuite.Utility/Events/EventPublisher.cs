@@ -10,13 +10,22 @@ namespace OSPSuite.Utility.Events
    public class EventPublisher : IEventPublisher
    {
       private readonly SynchronizationContext _context;
+      private readonly Thread _capturedUIThread;
       private readonly IExceptionManager _exceptionManager;
       private readonly IList<WeakRef<IListener>> _listeners;
 
+      // Assumes the constructing thread is the one the context dispatches to. Use the explicit-thread
+      // overload when the context targets a different thread (e.g. one captured for a separate UI thread).
       public EventPublisher(SynchronizationContext context, IExceptionManager exceptionManager)
+         : this(context, Thread.CurrentThread, exceptionManager)
+      {
+      }
+
+      public EventPublisher(SynchronizationContext context, Thread capturedUIThread, IExceptionManager exceptionManager)
       {
          _listeners = new List<WeakRef<IListener>>();
          _context = context;
+         _capturedUIThread = capturedUIThread;
          _exceptionManager = exceptionManager;
       }
 
@@ -33,11 +42,10 @@ namespace OSPSuite.Utility.Events
             listeners = _listeners.ToList();
          }
 
-         // When publishing from the thread that owns the context (typically the UI thread),
-         // dispatch synchronously with Send so handlers run inline and any state they touch is
-         // updated before PublishEvent returns. When publishing from another thread, use the
-         // non-blocking Post so the background thread is not blocked waiting on the UI thread.
-         var publishingFromContextThread = SynchronizationContext.Current == _context;
+         // Decide Send vs Post by thread identity, not by context instance: a thread can have more than
+         // one SynchronizationContext instance targeting it. On the context thread, Send dispatches inline
+         // (handlers run before this returns); from any other thread, Post so the publishing thread is not blocked.
+         var publishingFromUIThread = ReferenceEquals(Thread.CurrentThread, _capturedUIThread);
 
          // Determine if a Listener handles the message of type T by trying to cast it.
          // Dispatch happens outside the lock so handlers never run while the lock is held.
@@ -50,7 +58,7 @@ namespace OSPSuite.Utility.Events
             // from a background thread to the UI thread without having
             // to worry about it in the View or Presenter.
             SendOrPostCallback dispatch = state => _exceptionManager.Execute(() => receiver.Handle(eventToPublish));
-            if (publishingFromContextThread)
+            if (publishingFromUIThread)
                _context.Send(dispatch, null);
             else
                _context.Post(dispatch, null);

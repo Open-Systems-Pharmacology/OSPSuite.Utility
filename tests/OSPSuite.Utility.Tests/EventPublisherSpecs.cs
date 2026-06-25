@@ -12,7 +12,7 @@ namespace OSPSuite.Utility.Tests
 {
    public abstract class concern_for_EventPublisher : ContextSpecification<IEventPublisher>
    {
-      private IExceptionManager _exceptionManager;
+      protected IExceptionManager _exceptionManager;
       protected RecordingSynchronizationContext _synchronizationContext;
 
       protected override void Context()
@@ -32,10 +32,10 @@ namespace OSPSuite.Utility.Tests
          internal Exception Exception { get; set; }
       }
 
-      // Runs the given action on a fresh thread whose current SynchronizationContext is the one
-      // supplied, so a test can control whether PublishEvent sees itself as running on the
-      // publisher's context thread (pass _synchronizationContext) or off it (pass null). Joining
-      // the thread before returning makes the recorded flags safe to read on the test thread.
+      // Runs the given action on a fresh thread (distinct from the one that constructed the publisher),
+      // optionally installing the given SynchronizationContext on it. Publishing from here exercises the
+      // off-context-thread path, because the publishing thread is not the publisher's context thread.
+      // Joining the thread before returning makes the recorded flags safe to read on the test thread.
       protected static void runOnThreadWithSynchronizationContext(SynchronizationContext context, Action action)
       {
          Exception thrown = null;
@@ -108,13 +108,12 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
-   public class When_publishing_an_event_from_the_thread_that_owns_the_synchronization_context : concern_for_publishing_an_event
+   public class When_publishing_an_event_from_the_publisher_context_thread : concern_for_publishing_an_event
    {
       protected override void Because()
       {
-         // simulate publishing from the UI thread: the publishing thread's current context
-         // is the very context the publisher dispatches to
-         runOnThreadWithSynchronizationContext(_synchronizationContext, () => sut.PublishEvent(_eventToPublish));
+         // publish on the same thread that constructed the publisher - i.e. its context thread
+         sut.PublishEvent(_eventToPublish);
       }
 
       [Observation]
@@ -131,13 +130,120 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
+   public class When_publishing_an_event_from_the_context_thread_while_a_different_synchronization_context_is_current : concern_for_publishing_an_event
+   {
+      private SynchronizationContext _originalContext;
+
+      protected override void Because()
+      {
+         // The live SynchronizationContext.Current is a different instance than the one the publisher
+         // captured, but we are still on the publisher's context thread. Dispatch must stay on the Send
+         // (synchronous) path: this is the regression where instance comparison wrongly chose Post while
+         // already on the UI thread (e.g. closing the app), deferring handlers until after teardown.
+         _originalContext = SynchronizationContext.Current;
+         SynchronizationContext.SetSynchronizationContext(new RecordingSynchronizationContext());
+         try
+         {
+            sut.PublishEvent(_eventToPublish);
+         }
+         finally
+         {
+            SynchronizationContext.SetSynchronizationContext(_originalContext);
+         }
+      }
+
+      [Observation]
+      public void should_still_dispatch_synchronously_through_the_blocking_send_path()
+      {
+         _synchronizationContext.SendWasCalled.ShouldBeTrue();
+         _synchronizationContext.PostWasCalled.ShouldBeFalse();
+      }
+
+      [Observation]
+      public void should_notify_all_listeners_of_the_event()
+      {
+         A.CallTo(() => _listener.Handle(_eventToPublish)).MustHaveHappened();
+      }
+   }
+
    public class When_publishing_an_event_from_a_thread_that_does_not_own_the_synchronization_context : concern_for_publishing_an_event
    {
       protected override void Because()
       {
-         // simulate publishing from a background thread: the publishing thread does not share
-         // the publisher's context
+         // publish from a different thread than the one that constructed the publisher (a background
+         // thread): the publishing thread is not the publisher's context thread
          runOnThreadWithSynchronizationContext(null, () => sut.PublishEvent(_eventToPublish));
+      }
+
+      [Observation]
+      public void should_dispatch_through_the_non_blocking_post_path()
+      {
+         _synchronizationContext.PostWasCalled.ShouldBeTrue();
+         _synchronizationContext.SendWasCalled.ShouldBeFalse();
+      }
+
+      [Observation]
+      public void should_notify_all_listeners_of_the_event()
+      {
+         A.CallTo(() => _listener.Handle(_eventToPublish)).MustHaveHappened();
+      }
+   }
+
+   public class When_constructed_with_an_explicit_context_thread_and_publishing_from_that_thread : concern_for_EventPublisher
+   {
+      private object _eventToPublish;
+      private IListener<object> _listener;
+
+      protected override void Context()
+      {
+         base.Context();
+         // dispatch thread is explicitly the current (publishing) thread
+         sut = new EventPublisher(_synchronizationContext, Thread.CurrentThread, _exceptionManager);
+         _eventToPublish = A.Fake<object>();
+         _listener = A.Fake<IListener<object>>();
+         sut.AddListener(_listener);
+      }
+
+      protected override void Because()
+      {
+         sut.PublishEvent(_eventToPublish);
+      }
+
+      [Observation]
+      public void should_dispatch_synchronously_through_the_blocking_send_path()
+      {
+         _synchronizationContext.SendWasCalled.ShouldBeTrue();
+         _synchronizationContext.PostWasCalled.ShouldBeFalse();
+      }
+
+      [Observation]
+      public void should_notify_all_listeners_of_the_event()
+      {
+         A.CallTo(() => _listener.Handle(_eventToPublish)).MustHaveHappened();
+      }
+   }
+
+   public class When_constructed_with_an_explicit_context_thread_other_than_the_publishing_thread : concern_for_EventPublisher
+   {
+      private object _eventToPublish;
+      private IListener<object> _listener;
+
+      protected override void Context()
+      {
+         base.Context();
+         // an unstarted thread is never the current thread, so the publisher's context thread differs
+         // from whatever thread publishes below - mirrors a context captured for a separate UI thread
+         // (e.g. the splash screen) being published to from the main thread
+         var contextThread = new Thread(() => { });
+         sut = new EventPublisher(_synchronizationContext, contextThread, _exceptionManager);
+         _eventToPublish = A.Fake<object>();
+         _listener = A.Fake<IListener<object>>();
+         sut.AddListener(_listener);
+      }
+
+      protected override void Because()
+      {
+         sut.PublishEvent(_eventToPublish);
       }
 
       [Observation]
