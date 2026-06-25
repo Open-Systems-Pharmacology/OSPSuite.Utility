@@ -25,7 +25,7 @@ namespace OSPSuite.Utility.Events
       {
          _listeners = new List<WeakRef<IListener>>();
          _context = context;
-         _contextThread = contextThread ?? throw new ArgumentNullException(nameof(contextThread));
+         _contextThread = contextThread;
          _exceptionManager = exceptionManager;
       }
 
