@@ -33,6 +33,12 @@ namespace OSPSuite.Utility.Events
             listeners = _listeners.ToList();
          }
 
+         // When publishing from the thread that owns the context (typically the UI thread),
+         // dispatch synchronously with Send so handlers run inline and any state they touch is
+         // updated before PublishEvent returns. When publishing from another thread, use the
+         // non-blocking Post so the background thread is not blocked waiting on the UI thread.
+         var publishingFromContextThread = SynchronizationContext.Current == _context;
+
          // Determine if a Listener handles the message of type T by trying to cast it.
          // Dispatch happens outside the lock so handlers never run while the lock is held.
          foreach (var listener in listeners)
@@ -41,9 +47,13 @@ namespace OSPSuite.Utility.Events
             if (receiver == null) continue;
 
             // We are using SynchronizationContext to handle moving processing
-            // from a background thread to the UI thread without having 
-            // to worry about it in the View or Presenter
-            _context.Send(state => _exceptionManager.Execute(() => receiver.Handle(eventToPublish)), null);
+            // from a background thread to the UI thread without having
+            // to worry about it in the View or Presenter.
+            SendOrPostCallback dispatch = state => _exceptionManager.Execute(() => receiver.Handle(eventToPublish));
+            if (publishingFromContextThread)
+               _context.Send(dispatch, null);
+            else
+               _context.Post(dispatch, null);
          }
       }
 
