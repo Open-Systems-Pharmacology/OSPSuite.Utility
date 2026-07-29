@@ -156,7 +156,7 @@ namespace OSPSuite.Utility
          try
          {
             //start external application associated with the file
-            Process.Start(fileToOpen);
+            Process.Start(new ProcessStartInfo(fileToOpen) {UseShellExecute = true});
          }
          catch (Exception)
          {
