@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 
 namespace OSPSuite.Utility.Collections
 {
@@ -8,7 +10,9 @@ namespace OSPSuite.Utility.Collections
 
    public abstract class StartableRepository<T> : IStartableRepository<T>
    {
-      private bool _initialized;
+      private readonly object _locker = new object();
+      private volatile bool _initialized;
+      private ExceptionDispatchInfo _startFailure;
 
       protected StartableRepository()
       {
@@ -17,11 +21,29 @@ namespace OSPSuite.Utility.Collections
 
       public void Start()
       {
-         //not thread safe!
          if (_initialized) return;
-         DoStart();
-         _initialized = true;
-         PerformPostStartProcessing();
+         lock (_locker)
+         {
+            if (_initialized) return;
+
+            //DoStart may have partially filled the repository before throwing. Running it again would append
+            //to that partial state and duplicate entries, so the first failure is final and is rethrown.
+            _startFailure?.Throw();
+
+            try
+            {
+               DoStart();
+            }
+            catch (Exception e)
+            {
+               _startFailure = ExceptionDispatchInfo.Capture(e);
+               throw;
+            }
+
+            //set before the post processing so that a reentrant Start (e.g. PerformPostStartProcessing calling All) does not run DoStart again
+            _initialized = true;
+            PerformPostStartProcessing();
+         }
       }
 
       /// <summary>
