@@ -20,6 +20,11 @@ namespace OSPSuite.Utility.Collections
          _initialized = false;
       }
 
+      /// <summary>
+      ///    Starts the repository once. The first caller runs <see cref="DoStart" /> followed by
+      ///    <see cref="PerformPostStartProcessing" />; concurrent callers block until both have completed and therefore never
+      ///    observe a partially started repository. Subsequent calls return without locking.
+      /// </summary>
       public void Start()
       {
          if (_initialized) return;
@@ -56,7 +61,13 @@ namespace OSPSuite.Utility.Collections
       }
 
       /// <summary>
-      ///    Action that can only be done once the repository has been intialized
+      ///    Action that can only be done once the repository has been intialized.
+      ///    <para>
+      ///       Implementations typically build the lookup caches that the repository's own accessors read, so it runs while
+      ///       <see cref="Start" /> still holds the start lock: the repository is only published as started once this method
+      ///       returned. Reentrant use of the repository from this method is supported, but it must not block on another
+      ///       thread that accesses the same repository.
+      ///    </para>
       /// </summary>
       protected virtual void PerformPostStartProcessing()
       {
