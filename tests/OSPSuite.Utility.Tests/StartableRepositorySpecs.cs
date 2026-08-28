@@ -136,6 +136,54 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
+   public class When_starting_a_startable_repository_while_its_post_start_processing_is_still_running : StaticContextSpecification
+   {
+      private BlockingPostStartRepositoryForSpecs _repository;
+      private Thread _initializingThread;
+      private Thread _competingThread;
+      private bool _competingStartReturnedDuringPostStartProcessing;
+
+      protected override void Context()
+      {
+         _repository = new BlockingPostStartRepositoryForSpecs();
+      }
+
+      protected override void Because()
+      {
+         _initializingThread = new Thread(() => _repository.Start());
+         _initializingThread.Start();
+         _repository.PostStartProcessingStarted.Wait();
+
+         var competingStartEntered = new ManualResetEventSlim(false);
+         _competingThread = new Thread(() =>
+         {
+            competingStartEntered.Set();
+            _repository.Start();
+         });
+         _competingThread.Start();
+         competingStartEntered.Wait();
+
+         //Join returns true only if the competing Start already returned, i.e. while the repository is still starting
+         _competingStartReturnedDuringPostStartProcessing = _competingThread.Join(TimeSpan.FromMilliseconds(200));
+
+         _repository.ReleasePostStartProcessing();
+         _initializingThread.Join();
+         _competingThread.Join();
+      }
+
+      [Observation]
+      public void should_block_the_other_caller_until_the_post_start_processing_completed()
+      {
+         _competingStartReturnedDuringPostStartProcessing.ShouldBeFalse();
+      }
+
+      [Observation]
+      public void should_only_fill_the_repository_once()
+      {
+         _repository.DoStartCallCount.ShouldBeEqualTo(1);
+      }
+   }
+
    internal class StartableRepositoryForSpecs : StartableRepository<string>
    {
       private readonly List<string> _values = new List<string>();
@@ -165,6 +213,31 @@ namespace OSPSuite.Utility.Tests
       }
 
       public override IEnumerable<string> All() => new List<string>();
+   }
+
+   internal class BlockingPostStartRepositoryForSpecs : StartableRepository<string>
+   {
+      private readonly List<string> _values = new List<string>();
+      private readonly ManualResetEventSlim _postStartProcessingReleased = new ManualResetEventSlim(false);
+
+      public ManualResetEventSlim PostStartProcessingStarted { get; } = new ManualResetEventSlim(false);
+      public int DoStartCallCount { get; private set; }
+
+      public void ReleasePostStartProcessing() => _postStartProcessingReleased.Set();
+
+      protected override void DoStart()
+      {
+         DoStartCallCount++;
+         _values.Add("value");
+      }
+
+      protected override void PerformPostStartProcessing()
+      {
+         PostStartProcessingStarted.Set();
+         _postStartProcessingReleased.Wait();
+      }
+
+      public override IEnumerable<string> All() => _values;
    }
 
    internal class ReentrantStartableRepositoryForSpecs : StartableRepository<string>

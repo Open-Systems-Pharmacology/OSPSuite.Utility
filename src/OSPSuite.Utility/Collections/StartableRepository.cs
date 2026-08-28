@@ -12,6 +12,7 @@ namespace OSPSuite.Utility.Collections
    {
       private readonly object _locker = new object();
       private volatile bool _initialized;
+      private int _initializingThreadId;
       private ExceptionDispatchInfo _startFailure;
 
       protected StartableRepository()
@@ -26,23 +27,31 @@ namespace OSPSuite.Utility.Collections
          {
             if (_initialized) return;
 
+            //a reentrant call on the initializing thread (e.g. PerformPostStartProcessing using All) must not run DoStart again.
+            //Only that thread is let through: every other caller waits on the lock until the repository is fully started.
+            if (_initializingThreadId == Environment.CurrentManagedThreadId) return;
+
             //DoStart may have partially filled the repository before throwing. Running it again would append
             //to that partial state and duplicate entries, so the first failure is final and is rethrown.
             _startFailure?.Throw();
 
+            _initializingThreadId = Environment.CurrentManagedThreadId;
             try
             {
                DoStart();
+               PerformPostStartProcessing();
             }
             catch (Exception e)
             {
                _startFailure = ExceptionDispatchInfo.Capture(e);
                throw;
             }
+            finally
+            {
+               _initializingThreadId = 0;
+            }
 
-            //set before the post processing so that a reentrant Start (e.g. PerformPostStartProcessing calling All) does not run DoStart again
             _initialized = true;
-            PerformPostStartProcessing();
          }
       }
 
