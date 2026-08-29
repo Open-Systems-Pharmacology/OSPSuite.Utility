@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Runtime.ExceptionServices;
+using System.Threading;
 
 namespace OSPSuite.Utility.Collections
 {
@@ -10,10 +10,12 @@ namespace OSPSuite.Utility.Collections
 
    public abstract class StartableRepository<T> : IStartableRepository<T>
    {
-      private readonly object _locker = new object();
+      private readonly Lock _locker = new Lock();
       private volatile bool _initialized;
+
+      //only ever written and read while holding _locker, so unlike _initialized (which is also read on the
+      //lock-free fast path) this field does not need to be volatile
       private int _initializingThreadId;
-      private ExceptionDispatchInfo _startFailure;
 
       protected StartableRepository()
       {
@@ -24,6 +26,12 @@ namespace OSPSuite.Utility.Collections
       ///    Starts the repository once. The first caller runs <see cref="DoStart" /> followed by
       ///    <see cref="PerformPostStartProcessing" />; concurrent callers block until both have completed and therefore never
       ///    observe a partially started repository. Subsequent calls return without locking.
+      ///    <para>
+      ///       A <see cref="DoStart" /> failure leaves the repository cold: the exception propagates to the caller and the
+      ///       next call to <see cref="Start" /> runs <see cref="DoStart" /> again. Implementations whose
+      ///       <see cref="DoStart" /> can fail midway should therefore reset partial state on entry so that a retry does not
+      ///       duplicate entries.
+      ///    </para>
       /// </summary>
       public void Start()
       {
@@ -36,27 +44,23 @@ namespace OSPSuite.Utility.Collections
             //Only that thread is let through: every other caller waits on the lock until the repository is fully started.
             if (_initializingThreadId == Environment.CurrentManagedThreadId) return;
 
-            //DoStart may have partially filled the repository before throwing. Running it again would append
-            //to that partial state and duplicate entries, so the first failure is final and is rethrown.
-            _startFailure?.Throw();
-
+            var doStartSucceeded = false;
             _initializingThreadId = Environment.CurrentManagedThreadId;
             try
             {
                DoStart();
+               doStartSucceeded = true;
                PerformPostStartProcessing();
-            }
-            catch (Exception e)
-            {
-               _startFailure = ExceptionDispatchInfo.Capture(e);
-               throw;
             }
             finally
             {
                _initializingThreadId = 0;
-            }
 
-            _initialized = true;
+               //once DoStart succeeded the repository counts as started even when the post start processing throws
+               //(matching the historical behavior where the flag was set between the two), because re-running DoStart
+               //over the already filled content would duplicate entries
+               _initialized = doStartSucceeded;
+            }
          }
       }
 
