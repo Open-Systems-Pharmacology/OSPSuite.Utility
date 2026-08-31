@@ -13,24 +13,21 @@ namespace OSPSuite.Utility.Collections
       private readonly Lock _locker = new Lock();
       private volatile bool _initialized;
 
-      //only ever written and read while holding _locker, so unlike _initialized (which is also read on the
-      //lock-free fast path) this field does not need to be volatile
+      //both fields below are only ever written and read while holding _locker, so unlike _initialized (which is
+      //also read on the lock-free fast path) they do not need to be volatile. 0 is a safe sentinel for
+      //_initializingThreadId because managed thread ids are always positive.
       private int _initializingThreadId;
-
-      protected StartableRepository()
-      {
-         _initialized = false;
-      }
+      private bool _doStartCompleted;
 
       /// <summary>
       ///    Starts the repository once. The first caller runs <see cref="DoStart" /> followed by
       ///    <see cref="PerformPostStartProcessing" />; concurrent callers block until both have completed and therefore never
       ///    observe a partially started repository. Subsequent calls return without locking.
       ///    <para>
-      ///       A <see cref="DoStart" /> failure leaves the repository cold: the exception propagates to the caller and the
-      ///       next call to <see cref="Start" /> runs <see cref="DoStart" /> again. Implementations whose
-      ///       <see cref="DoStart" /> can fail midway should therefore reset partial state on entry so that a retry does not
-      ///       duplicate entries.
+      ///       A failure in either <see cref="DoStart" /> or <see cref="PerformPostStartProcessing" /> leaves the repository
+      ///       cold: the exception propagates to the caller and the next call to <see cref="Start" /> runs both again.
+      ///       Implementations that can fail midway should therefore reset partial state on entry of <see cref="DoStart" />
+      ///       so that a retry does not duplicate entries.
       ///    </para>
       /// </summary>
       public void Start()
@@ -40,32 +37,37 @@ namespace OSPSuite.Utility.Collections
          {
             if (_initialized) return;
 
-            //a reentrant call on the initializing thread (e.g. PerformPostStartProcessing using All) must not run DoStart again.
-            //Only that thread is let through: every other caller waits on the lock until the repository is fully started.
-            if (_initializingThreadId == Environment.CurrentManagedThreadId) return;
+            if (_initializingThreadId == Environment.CurrentManagedThreadId)
+            {
+               //reentrant call on the initializing thread. Out of PerformPostStartProcessing (e.g. via All) this is
+               //supported and must not run DoStart again: the repository content is already complete
+               if (_doStartCompleted) return;
 
-            var doStartSucceeded = false;
+               //out of DoStart itself the repository is not filled yet, so returning would silently expose empty
+               //content (and running DoStart again would recurse forever, as the original implementation did)
+               throw new InvalidOperationException($"'{GetType().Name}.{nameof(DoStart)}' tried to use the repository it is currently filling.");
+            }
+
             _initializingThreadId = Environment.CurrentManagedThreadId;
             try
             {
                DoStart();
-               doStartSucceeded = true;
+               _doStartCompleted = true;
                PerformPostStartProcessing();
+
+               //published last and only on full success: a failure above leaves the repository cold and the next Start retries
+               _initialized = true;
             }
             finally
             {
                _initializingThreadId = 0;
-
-               //once DoStart succeeded the repository counts as started even when the post start processing throws
-               //(matching the historical behavior where the flag was set between the two), because re-running DoStart
-               //over the already filled content would duplicate entries
-               _initialized = doStartSucceeded;
+               _doStartCompleted = false;
             }
          }
       }
 
       /// <summary>
-      ///    Action that can only be done once the repository has been intialized.
+      ///    Action that can only be done once the repository has been initialized.
       ///    <para>
       ///       Implementations typically build the lookup caches that the repository's own accessors read, so it runs while
       ///       <see cref="Start" /> still holds the start lock: the repository is only published as started once this method

@@ -18,6 +18,10 @@ namespace OSPSuite.Utility.Tests
 
       protected override void Because()
       {
+         //Because runs once per observation, so the accumulating lists must start empty each time
+         _doStartCallCounts.Clear();
+         _exceptions.Clear();
+
          //the race only exists during the very first Start, so each attempt uses a fresh repository
          for (var attempt = 0; attempt < _attempts; attempt++)
          {
@@ -29,10 +33,10 @@ namespace OSPSuite.Utility.Tests
             {
                threads.Add(new Thread(() =>
                {
-                  //release all threads into Start at the same moment to maximize the race window
-                  barrier.SignalAndWait();
                   try
                   {
+                     //release all threads into Start at the same moment to maximize the race window
+                     barrier.SignalAndWait(StartableRepositorySpecsHelper.SpecTimeout);
                      repository.Start();
                   }
                   catch (Exception ex)
@@ -78,21 +82,8 @@ namespace OSPSuite.Utility.Tests
 
       protected override void Because()
       {
-         _exception = Catch(() => _repository.Start());
+         _exception = StartableRepositorySpecsHelper.Catch(() => _repository.Start());
          _repository.Start();
-      }
-
-      private static Exception Catch(Action action)
-      {
-         try
-         {
-            action();
-            return null;
-         }
-         catch (Exception e)
-         {
-            return e;
-         }
       }
 
       [Observation]
@@ -114,33 +105,93 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
-   public class When_starting_a_startable_repository_whose_post_start_processing_failed : StaticContextSpecification
+   public class When_starting_a_startable_repository_concurrently_while_the_first_filling_fails : StaticContextSpecification
    {
-      private FailingPostStartRepositoryForSpecs _repository;
-      private Exception _exception;
+      private const int _threadCount = 8;
+      private FailingOnceStartableRepositoryForSpecs _repository;
+      private readonly List<Exception> _exceptions = new List<Exception>();
+      private readonly List<int> _contentCountsSeenByNonThrowingThreads = new List<int>();
 
       protected override void Context()
       {
-         _repository = new FailingPostStartRepositoryForSpecs();
+         _repository = new FailingOnceStartableRepositoryForSpecs();
       }
 
       protected override void Because()
       {
-         _exception = Catch(() => _repository.Start());
-         _repository.Start();
+         //Because runs once per observation, so the accumulating lists must start empty each time
+         _exceptions.Clear();
+         _contentCountsSeenByNonThrowingThreads.Clear();
+
+         using var barrier = new Barrier(_threadCount);
+         var threads = new List<Thread>();
+
+         for (var t = 0; t < _threadCount; t++)
+         {
+            threads.Add(new Thread(() =>
+            {
+               barrier.SignalAndWait(StartableRepositorySpecsHelper.SpecTimeout);
+               try
+               {
+                  _repository.Start();
+               }
+               catch (Exception ex)
+               {
+                  lock (_exceptions)
+                  {
+                     _exceptions.Add(ex);
+                  }
+
+                  return;
+               }
+
+               lock (_contentCountsSeenByNonThrowingThreads)
+               {
+                  _contentCountsSeenByNonThrowingThreads.Add(_repository.All().Count());
+               }
+            }));
+         }
+
+         threads.ForEach(x => x.Start());
+         threads.ForEach(x => x.Join());
       }
 
-      private static Exception Catch(Action action)
+      [Observation]
+      public void should_report_the_failure_to_exactly_the_one_caller_that_ran_the_failing_filling()
       {
-         try
-         {
-            action();
-            return null;
-         }
-         catch (Exception e)
-         {
-            return e;
-         }
+         var messages = string.Join(Environment.NewLine, _exceptions.Select(ex => $"{ex.GetType().Name}: {ex.Message} @ {ex.StackTrace}"));
+         _exceptions.Count.ShouldBeEqualTo(1, messages);
+         _exceptions[0].ShouldBeAnInstanceOf<InvalidOperationException>();
+      }
+
+      [Observation]
+      public void should_retry_the_filling_exactly_once()
+      {
+         _repository.DoStartCallCount.ShouldBeEqualTo(2);
+      }
+
+      [Observation]
+      public void should_let_every_other_caller_observe_the_consistent_content()
+      {
+         _contentCountsSeenByNonThrowingThreads.Count.ShouldBeEqualTo(_threadCount - 1);
+         _contentCountsSeenByNonThrowingThreads.Each(x => x.ShouldBeEqualTo(1));
+      }
+   }
+
+   public class When_starting_a_startable_repository_whose_post_start_processing_failed : StaticContextSpecification
+   {
+      private FailingOncePostStartRepositoryForSpecs _repository;
+      private Exception _exception;
+
+      protected override void Context()
+      {
+         _repository = new FailingOncePostStartRepositoryForSpecs();
+      }
+
+      protected override void Because()
+      {
+         _exception = StartableRepositorySpecsHelper.Catch(() => _repository.Start());
+         _repository.Start();
       }
 
       [Observation]
@@ -150,10 +201,39 @@ namespace OSPSuite.Utility.Tests
       }
 
       [Observation]
-      public void should_count_as_started_because_the_filling_succeeded()
+      public void should_not_publish_the_repository_as_started_and_run_the_full_start_again_on_the_next_call()
       {
-         _repository.DoStartCallCount.ShouldBeEqualTo(1);
-         _repository.PostStartCallCount.ShouldBeEqualTo(1);
+         _repository.DoStartCallCount.ShouldBeEqualTo(2);
+         _repository.PostStartCallCount.ShouldBeEqualTo(2);
+      }
+
+      [Observation]
+      public void should_not_duplicate_the_content_when_the_filling_resets_partial_state()
+      {
+         _repository.All().Count().ShouldBeEqualTo(1);
+      }
+   }
+
+   public class When_a_repository_filling_tries_to_use_the_repository_it_is_currently_filling : StaticContextSpecification
+   {
+      private ReentrantDoStartRepositoryForSpecs _repository;
+      private Exception _exception;
+
+      protected override void Context()
+      {
+         _repository = new ReentrantDoStartRepositoryForSpecs();
+      }
+
+      protected override void Because()
+      {
+         _exception = StartableRepositorySpecsHelper.Catch(() => _repository.Start());
+      }
+
+      [Observation]
+      public void should_fail_with_a_clear_error_instead_of_silently_returning_empty_content()
+      {
+         _exception.ShouldBeAnInstanceOf<InvalidOperationException>();
+         _exception.Message.Contains(nameof(ReentrantDoStartRepositoryForSpecs)).ShouldBeTrue();
       }
    }
 
@@ -201,24 +281,37 @@ namespace OSPSuite.Utility.Tests
          _initializingThread = new Thread(() => _repository.Start());
          _initializingThread.Start();
          //the initializing thread is now parked inside PerformPostStartProcessing
-         _repository.PostStartProcessingStarted.Wait();
+         _repository.PostStartProcessingStarted.Wait(StartableRepositorySpecsHelper.SpecTimeout).ShouldBeTrue();
 
+         using var competingStartEntered = new ManualResetEventSlim(false);
          _competingThread = new Thread(() =>
          {
+            competingStartEntered.Set();
             _repository.Start();
             //captured at the moment Start returns: a Start that does not block would observe false here
             _postStartProcessingHadCompletedWhenCompetingStartReturned = _repository.PostStartProcessingCompleted;
          });
          _competingThread.Start();
+         competingStartEntered.Wait(StartableRepositorySpecsHelper.SpecTimeout).ShouldBeTrue();
 
-         //not an assertion: merely gives a non-blocking (buggy) Start every opportunity to return early.
-         //A blocking Start ignores this window entirely, so the spec cannot fail because of timing.
+         //opportunity window, not an assertion: only a few instructions separate the signal above from the lock,
+         //so a non-blocking Start would almost surely return inside this window and record false. A blocking Start
+         //ignores the window entirely, so scheduling can only delay regression detection, never fail the spec.
          _competingThread.Join(TimeSpan.FromMilliseconds(250));
 
          _repository.ReleasePostStartProcessing();
          _initializingThread.Join();
          _competingThread.Join();
+      }
+
+      public override void Cleanup()
+      {
+         //safety net for a Because that failed midway: unpark the initializing thread before disposing the events
+         _repository.ReleasePostStartProcessing();
+         _initializingThread?.Join(StartableRepositorySpecsHelper.SpecTimeout);
+         _competingThread?.Join(StartableRepositorySpecsHelper.SpecTimeout);
          _repository.Dispose();
+         base.Cleanup();
       }
 
       [Observation]
@@ -231,6 +324,25 @@ namespace OSPSuite.Utility.Tests
       public void should_only_fill_the_repository_once()
       {
          _repository.DoStartCallCount.ShouldBeEqualTo(1);
+      }
+   }
+
+   internal static class StartableRepositorySpecsHelper
+   {
+      //bounded waits turn a hanging concurrency spec into a diagnosable CI failure
+      public static readonly TimeSpan SpecTimeout = TimeSpan.FromSeconds(30);
+
+      public static Exception Catch(Action action)
+      {
+         try
+         {
+            action();
+            return null;
+         }
+         catch (Exception e)
+         {
+            return e;
+         }
       }
    }
 
@@ -255,22 +367,24 @@ namespace OSPSuite.Utility.Tests
    internal class FailingOnceStartableRepositoryForSpecs : StartableRepository<string>
    {
       private readonly List<string> _values = new List<string>();
-      public int DoStartCallCount { get; private set; }
+      private int _doStartCallCount;
+
+      public int DoStartCallCount => _doStartCallCount;
 
       protected override void DoStart()
       {
-         DoStartCallCount++;
+         Interlocked.Increment(ref _doStartCallCount);
          //reset partial state so that a retry after a failure does not duplicate entries
          _values.Clear();
          _values.Add("value");
-         if (DoStartCallCount == 1)
+         if (_doStartCallCount == 1)
             throw new InvalidOperationException("cannot fill");
       }
 
       public override IEnumerable<string> All() => _values;
    }
 
-   internal class FailingPostStartRepositoryForSpecs : StartableRepository<string>
+   internal class FailingOncePostStartRepositoryForSpecs : StartableRepository<string>
    {
       private readonly List<string> _values = new List<string>();
       public int DoStartCallCount { get; private set; }
@@ -279,25 +393,46 @@ namespace OSPSuite.Utility.Tests
       protected override void DoStart()
       {
          DoStartCallCount++;
+         //reset partial state so that a retry after a failure does not duplicate entries
+         _values.Clear();
          _values.Add("value");
       }
 
       protected override void PerformPostStartProcessing()
       {
          PostStartCallCount++;
-         throw new InvalidOperationException("post start processing failed");
+         if (PostStartCallCount == 1)
+            throw new InvalidOperationException("post start processing failed");
       }
 
       public override IEnumerable<string> All() => _values;
+   }
+
+   internal class ReentrantDoStartRepositoryForSpecs : StartableRepository<string>
+   {
+      private readonly List<string> _values = new List<string>();
+
+      protected override void DoStart()
+      {
+         //using the repository while it is being filled would silently return empty content
+         All().Count();
+      }
+
+      public override IEnumerable<string> All()
+      {
+         Start();
+         return _values;
+      }
    }
 
    internal class BlockingPostStartRepositoryForSpecs : StartableRepository<string>, IDisposable
    {
       private readonly List<string> _values = new List<string>();
       private readonly ManualResetEventSlim _postStartProcessingReleased = new ManualResetEventSlim(false);
-      public volatile bool PostStartProcessingCompleted;
+      private volatile bool _postStartProcessingCompleted;
 
       public ManualResetEventSlim PostStartProcessingStarted { get; } = new ManualResetEventSlim(false);
+      public bool PostStartProcessingCompleted => _postStartProcessingCompleted;
       public int DoStartCallCount { get; private set; }
 
       public void ReleasePostStartProcessing() => _postStartProcessingReleased.Set();
@@ -311,8 +446,8 @@ namespace OSPSuite.Utility.Tests
       protected override void PerformPostStartProcessing()
       {
          PostStartProcessingStarted.Set();
-         _postStartProcessingReleased.Wait();
-         PostStartProcessingCompleted = true;
+         _postStartProcessingReleased.Wait(StartableRepositorySpecsHelper.SpecTimeout);
+         _postStartProcessingCompleted = true;
       }
 
       public void Dispose()
