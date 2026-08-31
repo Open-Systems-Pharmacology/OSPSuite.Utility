@@ -13,12 +13,12 @@ namespace OSPSuite.Utility.Tests
    {
       private const int _threadCount = 16;
       private const int _attempts = 25;
+      private readonly Lock _sync = new Lock();
       private readonly List<int> _doStartCallCounts = new List<int>();
       private readonly List<Exception> _exceptions = new List<Exception>();
 
       protected override void Because()
       {
-         //Because runs once per observation, so the accumulating lists must start empty each time
          _doStartCallCounts.Clear();
          _exceptions.Clear();
 
@@ -41,7 +41,7 @@ namespace OSPSuite.Utility.Tests
                   }
                   catch (Exception ex)
                   {
-                     lock (_exceptions)
+                     lock (_sync)
                      {
                         _exceptions.Add(ex);
                      }
@@ -109,6 +109,7 @@ namespace OSPSuite.Utility.Tests
    {
       private const int _threadCount = 8;
       private FailingOnceStartableRepositoryForSpecs _repository;
+      private readonly Lock _sync = new Lock();
       private readonly List<Exception> _exceptions = new List<Exception>();
       private readonly List<int> _contentCountsSeenByNonThrowingThreads = new List<int>();
 
@@ -119,7 +120,6 @@ namespace OSPSuite.Utility.Tests
 
       protected override void Because()
       {
-         //Because runs once per observation, so the accumulating lists must start empty each time
          _exceptions.Clear();
          _contentCountsSeenByNonThrowingThreads.Clear();
 
@@ -137,7 +137,7 @@ namespace OSPSuite.Utility.Tests
                }
                catch (Exception ex)
                {
-                  lock (_exceptions)
+                  lock (_sync)
                   {
                      _exceptions.Add(ex);
                   }
@@ -145,7 +145,7 @@ namespace OSPSuite.Utility.Tests
                   return;
                }
 
-               lock (_contentCountsSeenByNonThrowingThreads)
+               lock (_sync)
                {
                   _contentCountsSeenByNonThrowingThreads.Add(_repository.All().Count());
                }
@@ -211,6 +211,38 @@ namespace OSPSuite.Utility.Tests
       public void should_not_duplicate_the_content_when_the_filling_resets_partial_state()
       {
          _repository.All().Count().ShouldBeEqualTo(1);
+      }
+   }
+
+   public class When_the_failing_post_start_processing_does_not_reset_its_partial_state : StaticContextSpecification
+   {
+      private NonResettingFailingPostStartRepositoryForSpecs _repository;
+      private Exception _firstException;
+      private Exception _retryException;
+
+      protected override void Context()
+      {
+         _repository = new NonResettingFailingPostStartRepositoryForSpecs();
+      }
+
+      protected override void Because()
+      {
+         _firstException = StartableRepositorySpecsHelper.Catch(() => _repository.Start());
+         _retryException = StartableRepositorySpecsHelper.Catch(() => _repository.Start());
+      }
+
+      [Observation]
+      public void should_let_the_original_failure_propagate_to_the_first_caller()
+      {
+         _firstException.ShouldBeAnInstanceOf<InvalidOperationException>();
+      }
+
+      //documents the known limitation of the retry contract: a hook that fills a cache without resetting it
+      //fails loudly on the duplicate key when the retry re-runs it - it never silently serves duplicated content
+      [Observation]
+      public void should_fail_loudly_on_the_retry_instead_of_silently_duplicating_the_hook_built_cache()
+      {
+         _retryException.ShouldBeAnInstanceOf<ArgumentException>();
       }
    }
 
@@ -307,10 +339,10 @@ namespace OSPSuite.Utility.Tests
       public override void Cleanup()
       {
          //safety net for a Because that failed midway: unpark the initializing thread before disposing the events
-         _repository.ReleasePostStartProcessing();
+         _repository?.ReleasePostStartProcessing();
          _initializingThread?.Join(StartableRepositorySpecsHelper.SpecTimeout);
          _competingThread?.Join(StartableRepositorySpecsHelper.SpecTimeout);
-         _repository.Dispose();
+         _repository?.Dispose();
          base.Cleanup();
       }
 
@@ -327,6 +359,8 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
+   //BDDHelper runs Context and Because once per observation, so specs that accumulate results in readonly
+   //collections must clear them at the beginning of Because
    internal static class StartableRepositorySpecsHelper
    {
       //bounded waits turn a hanging concurrency spec into a diagnosable CI failure
@@ -373,11 +407,11 @@ namespace OSPSuite.Utility.Tests
 
       protected override void DoStart()
       {
-         Interlocked.Increment(ref _doStartCallCount);
+         var callCount = Interlocked.Increment(ref _doStartCallCount);
          //reset partial state so that a retry after a failure does not duplicate entries
          _values.Clear();
          _values.Add("value");
-         if (_doStartCallCount == 1)
+         if (callCount == 1)
             throw new InvalidOperationException("cannot fill");
       }
 
@@ -403,6 +437,30 @@ namespace OSPSuite.Utility.Tests
          PostStartCallCount++;
          if (PostStartCallCount == 1)
             throw new InvalidOperationException("post start processing failed");
+      }
+
+      public override IEnumerable<string> All() => _values;
+   }
+
+   internal class NonResettingFailingPostStartRepositoryForSpecs : StartableRepository<string>
+   {
+      private readonly List<string> _values = new List<string>();
+      //mirrors the PK-Sim hook pattern: a cache filled via Add without a reset, so a re-run hits the duplicate key
+      private readonly Cache<string, string> _cacheBuiltByHook = new Cache<string, string>(getKey: x => x);
+      private int _postStartCallCount;
+
+      protected override void DoStart()
+      {
+         _values.Clear();
+         _values.Add("value");
+      }
+
+      protected override void PerformPostStartProcessing()
+      {
+         _postStartCallCount++;
+         _values.Each(_cacheBuiltByHook.Add);
+         if (_postStartCallCount == 1)
+            throw new InvalidOperationException("post start processing failed after filling its cache");
       }
 
       public override IEnumerable<string> All() => _values;
