@@ -19,6 +19,7 @@ namespace OSPSuite.Utility.Tests
 
       protected override void Because()
       {
+         //BDDHelper runs Context and Because once per observation, so accumulating collections must start empty each time
          _doStartCallCounts.Clear();
          _exceptions.Clear();
 
@@ -120,6 +121,7 @@ namespace OSPSuite.Utility.Tests
 
       protected override void Because()
       {
+         //cleared for the per-observation rerun, see When_starting_a_startable_repository_concurrently
          _exceptions.Clear();
          _contentCountsSeenByNonThrowingThreads.Clear();
 
@@ -238,11 +240,13 @@ namespace OSPSuite.Utility.Tests
       }
 
       //documents the known limitation of the retry contract: a hook that fills a cache without resetting it
-      //fails loudly on the duplicate key when the retry re-runs it - it never silently serves duplicated content
+      //fails loudly when the retry re-runs it - it never silently serves duplicated content. The exact exception
+      //type is Cache's business, so only loudness and the absence of duplication are asserted
       [Observation]
       public void should_fail_loudly_on_the_retry_instead_of_silently_duplicating_the_hook_built_cache()
       {
-         _retryException.ShouldBeAnInstanceOf<ArgumentException>();
+         _retryException.ShouldNotBeNull();
+         _repository.All().Count().ShouldBeEqualTo(1);
       }
    }
 
@@ -359,8 +363,6 @@ namespace OSPSuite.Utility.Tests
       }
    }
 
-   //BDDHelper runs Context and Because once per observation, so specs that accumulate results in readonly
-   //collections must clear them at the beginning of Because
    internal static class StartableRepositorySpecsHelper
    {
       //bounded waits turn a hanging concurrency spec into a diagnosable CI failure
@@ -473,7 +475,7 @@ namespace OSPSuite.Utility.Tests
       protected override void DoStart()
       {
          //using the repository while it is being filled would silently return empty content
-         All().Count();
+         _ = All().Count();
       }
 
       public override IEnumerable<string> All()
