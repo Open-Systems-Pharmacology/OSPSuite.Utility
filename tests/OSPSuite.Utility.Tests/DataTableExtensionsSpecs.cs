@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.IO;
 using OSPSuite.BDDHelper;
 using OSPSuite.BDDHelper.Extensions;
@@ -124,6 +125,67 @@ namespace OSPSuite.Utility.Tests
       public void should_have_exported_one_row_for_the_header_and_one_for_each_row_and_one_for_each_comment()
       {
          _allLines.Length.ShouldBeEqualTo(_dataTable.Rows.Count + 1 + 1);
+      }
+
+      public override void GlobalCleanup()
+      {
+         base.GlobalCleanup();
+         FileHelper.DeleteFile(_fileName);
+      }
+   }
+
+   public class When_converting_a_datatable_to_csv_using_the_default_settings : concern_for_DataTableExtensions
+   {
+      private string _fileName;
+      private string _csv;
+
+      public override void GlobalContext()
+      {
+         base.GlobalContext();
+         _fileName = FileHelper.GenerateTemporaryFileName();
+         _dataTable.ExportToCSV(_fileName);
+         _csv = _dataTable.ToCSV();
+      }
+
+      [Observation]
+      public void should_return_the_same_content_as_the_exported_file()
+      {
+         _csv.ShouldBeEqualTo(File.ReadAllText(_fileName));
+      }
+
+      [Observation]
+      public void should_return_the_quoted_header_followed_by_one_line_for_each_row()
+      {
+         var allLines = _csv.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);
+         allLines.Length.ShouldBeEqualTo(_dataTable.Rows.Count + 1);
+         allLines[0].ShouldBeEqualTo("\"col1\",\"col2\"");
+      }
+
+      public override void GlobalCleanup()
+      {
+         base.GlobalCleanup();
+         FileHelper.DeleteFile(_fileName);
+      }
+   }
+
+   public class When_converting_a_datatable_to_csv_using_another_separator_without_quote_encapsulation_for_header_and_with_comments : concern_for_DataTableExtensions
+   {
+      private string _fileName;
+      private string _csv;
+
+      public override void GlobalContext()
+      {
+         base.GlobalContext();
+         _fileName = FileHelper.GenerateTemporaryFileName();
+         var comments = new[] {"Hello"};
+         _dataTable.ExportToCSV(_fileName, delimiter: "-", encloseHeaderInQuotes: false, comments: comments);
+         _csv = _dataTable.ToCSV(delimiter: "-", encloseHeaderInQuotes: false, comments: comments);
+      }
+
+      [Observation]
+      public void should_return_the_same_content_as_the_exported_file()
+      {
+         _csv.ShouldBeEqualTo(File.ReadAllText(_fileName));
       }
 
       public override void GlobalCleanup()

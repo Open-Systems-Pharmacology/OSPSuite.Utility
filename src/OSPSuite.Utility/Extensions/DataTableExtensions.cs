@@ -74,54 +74,78 @@ namespace OSPSuite.Utility.Extensions
       /// </param>
       public static void ExportToCSV(this DataTable dataTable, string fileName, string delimiter = ",", bool encloseHeaderInQuotes = true, IReadOnlyList<string> comments = null)
       {
-         FileHelper.TrySaveFile(fileName, () => { exportToCSV(dataTable, fileName, delimiter, encloseHeaderInQuotes, comments); });
+         FileHelper.TrySaveFile(fileName, () =>
+         {
+            using (var sw = new StreamWriter(new FileStream(fileName, FileMode.Create, FileAccess.ReadWrite), Encoding.UTF8))
+            {
+               writeCSV(sw, dataTable, delimiter, encloseHeaderInQuotes, comments);
+            }
+         });
       }
 
-      private static void exportToCSV(DataTable dataTable, string fileName, string delimiter, bool encloseHeaderInQuotes, IReadOnlyList<string> comments)
+      /// <summary>
+      ///    Returns the csv content of the datatable using the <paramref name="delimiter" /> given as parameter. The content is
+      ///    identical to the file written by <see cref="ExportToCSV" /> with the same parameters
+      /// </summary>
+      /// <param name="dataTable">DataTable to convert</param>
+      /// <param name="delimiter">Delimiter. Default is ','</param>
+      /// <param name="encloseHeaderInQuotes">
+      ///    If set to <c>true</c> table column will be enclosed in quotes. Default is
+      ///    <c>true</c>
+      /// </param>
+      /// <param name="comments">
+      ///    List of comment that will be added at the beginning of the csv content. A # will be added at the
+      ///    beginning of each item
+      /// </param>
+      public static string ToCSV(this DataTable dataTable, string delimiter = ",", bool encloseHeaderInQuotes = true, IReadOnlyList<string> comments = null)
       {
-         using (var sw = new StreamWriter(new FileStream(fileName, FileMode.Create, FileAccess.ReadWrite), Encoding.UTF8))
+         using (var sw = new StringWriter())
          {
-            var allComments = comments ?? new List<string>();
+            writeCSV(sw, dataTable, delimiter, encloseHeaderInQuotes, comments);
+            return sw.ToString();
+         }
+      }
 
-            //Write the comments (and split  new lines if defined in one line)OSP
-            foreach (var comment in allComments.SelectMany(c => c.Split(Environment.NewLine.ToCharArray())))
-            {
-               sw.WriteLine("#{0}", comment);
-            }
+      private static void writeCSV(TextWriter sw, DataTable dataTable, string delimiter, bool encloseHeaderInQuotes, IReadOnlyList<string> comments)
+      {
+         var allComments = comments ?? new List<string>();
 
-            // Write the headers.
-            int colCount = dataTable.Columns.Count;
+         //Write the comments (and split  new lines if defined in one line)OSP
+         foreach (var comment in allComments.SelectMany(c => c.Split(Environment.NewLine.ToCharArray())))
+         {
+            sw.WriteLine("#{0}", comment);
+         }
+
+         // Write the headers.
+         int colCount = dataTable.Columns.Count;
+         for (int i = 0; i < colCount; i++)
+         {
+            var columnName = dataTable.Columns[i].ColumnName;
+            if (encloseHeaderInQuotes)
+               columnName = $"\"{columnName}\"";
+
+            sw.Write(columnName);
+            if (i < colCount - 1)
+               sw.Write(delimiter);
+         }
+
+         sw.Write(sw.NewLine);
+
+         // Write rows.
+         foreach (DataRow dr in dataTable.Rows)
+         {
             for (int i = 0; i < colCount; i++)
             {
-               var columnName = dataTable.Columns[i].ColumnName;
-               if (encloseHeaderInQuotes)
-                  columnName = $"\"{columnName}\"";
+               if (!Convert.IsDBNull(dr[i]))
+               {
+                  sw.Write(dr[i].ToString());
+               }
 
-               sw.Write(columnName);
                if (i < colCount - 1)
                   sw.Write(delimiter);
             }
 
             sw.Write(sw.NewLine);
-
-            // Write rows.
-            foreach (DataRow dr in dataTable.Rows)
-            {
-               for (int i = 0; i < colCount; i++)
-               {
-                  if (!Convert.IsDBNull(dr[i]))
-                  {
-                     sw.Write(dr[i].ToString());
-                  }
-
-                  if (i < colCount - 1)
-                     sw.Write(delimiter);
-               }
-
-               sw.Write(sw.NewLine);
-            }
-
-            sw.Close();
          }
       }
    }
